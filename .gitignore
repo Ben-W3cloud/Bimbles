@@ -35,3 +35,5 @@ bun.lock
 
 # Editor
 *.un~ 
+
+plan.md
