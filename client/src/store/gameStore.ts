@@ -50,6 +50,7 @@ interface GameState {
   setEliminated: (name: string | null) => void
   setEndData: (podium: StandingEntry[], leaderboard: StandingEntry[]) => void
   setTerritory: (zones: TerritoryZone[], round: number) => void
+  setTeams: (players: { nickname: string; team: string }[]) => void
   addReaction: (emoji: string, nickname: string) => void
   removeReaction: (id: number) => void
   reset: () => void
@@ -112,6 +113,12 @@ export const useGameStore = create<GameState>((set) => ({
   setEliminated: (name) => set({ eliminated: name }),
   setEndData: (podium, leaderboard) => set({ podium, leaderboard }),
   setTerritory: (zones, round) => set({ territoryZones: zones, territoryRound: round }),
+  setTeams: (teamPlayers) => set((s) => ({
+    players: s.players.map(p => {
+      const match = teamPlayers.find(tp => tp.nickname === p.nickname)
+      return match ? { ...p, team: match.team } : p
+    }),
+  })),
   addReaction: (emoji, nickname) => set((s) => ({
     reactions: [...s.reactions, { id: Date.now() + Math.random(), emoji, nickname }],
   })),

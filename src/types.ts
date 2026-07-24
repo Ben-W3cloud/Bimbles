@@ -91,14 +91,17 @@ export type ClientMessage =
   | { type: 'host:end' }
   | { type: 'host:play-again'; reshuffle: boolean }
   | { type: 'host:change-mode'; mode: GameMode }
+  | { type: 'host:shuffle-teams' }
+  | { type: 'host:assign-teams'; assignments: Record<string, string> }
 
 // Server → Client
 export type ServerMessage =
   | { type: 'room:state'; state: ClientRoomState }
   | { type: 'room:player-joined'; nickname: string; count: number }
   | { type: 'room:closed' }
+  | { type: 'room:teams-updated'; players: { nickname: string; team: string }[] }
   | { type: 'game:countdown'; seconds: number }
-  | { type: 'game:question'; id: string; type: QuestionType; question: string; options?: string[]; timeLimit: number; questionNumber: number; total: number; pairs?: { left: string; right: string }[]; order?: string[] }
+  | { type: 'game:question'; id: string; questionType: QuestionType; question: string; options?: string[]; timeLimit: number; questionNumber: number; total: number; pairs?: { left: string; right: string }[]; order?: string[] }
   | { type: 'game:answer-locked' }
   | { type: 'game:reveal'; correctAnswer: string | string[]; explanation: string; playerResults: Record<string, { correct: boolean; answerGiven: string | string[] | null }>; stats: { correctPct: number; wrongPct: number } }
   | { type: 'game:leaderboard'; standings: StandingEntry[] }
@@ -118,6 +121,8 @@ export interface StandingEntry {
   token: string
   team?: string
   eliminated?: boolean
+  // Team battle: list of members under this team entry
+  members?: { nickname: string; points: number; streak: number }[]
 }
 
 export interface ClientRoomState {

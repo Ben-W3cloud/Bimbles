@@ -49,6 +49,7 @@ export interface StandingEntry {
   token: string
   team?: string
   eliminated?: boolean
+  members?: { nickname: string; points: number; streak: number }[]
 }
 
 export interface TerritoryZone {
@@ -85,7 +86,7 @@ export interface ClientRoomState {
 
 export interface ActiveQuestion {
   id: string
-  type: QuestionType
+  questionType: QuestionType
   question: string
   options?: string[]
   timeLimit: number

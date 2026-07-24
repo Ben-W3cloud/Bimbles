@@ -26,11 +26,11 @@ export function GameQuestion({ showResult = false }: { showResult?: boolean }) {
       setTimeRemaining(useGameStore.getState().timeRemaining - 1)
     }, 1000)
     return () => clearInterval(timerRef.current)
-  }, [q?.id])
+  }, [q?.id, showResult])
 
   // Init order for ordering questions
   useEffect(() => {
-    if (q?.type === 'ordering' && q.order) {
+    if (q?.questionType === 'ordering' && q.order) {
       const shuffled = [...q.order].sort(() => Math.random() - 0.5)
       setOrderItems(shuffled)
     }
@@ -38,21 +38,30 @@ export function GameQuestion({ showResult = false }: { showResult?: boolean }) {
 
   if (!q) return null
 
+  const setYourAnswer = useGameStore(s => s.setYourAnswer)
+  const setAnswerLocked = useGameStore(s => s.setAnswerLocked)
+
   const handleSubmit = (answer: string | string[]) => {
     if (answerLocked) return
     setSelected(answer)
+    setYourAnswer(answer)
+    setAnswerLocked(true)
     sendAnswer(q.id, answer, Date.now())
   }
 
   const handleMultiSubmit = () => {
     if (answerLocked || multiSelected.length === 0) return
     setSelected(multiSelected)
+    setYourAnswer(multiSelected)
+    setAnswerLocked(true)
     sendAnswer(q.id, multiSelected, Date.now())
   }
 
   const handleOrderSubmit = () => {
     if (answerLocked) return
     setSelected(orderItems)
+    setYourAnswer(orderItems)
+    setAnswerLocked(true)
     sendAnswer(q.id, orderItems, Date.now())
   }
 
@@ -60,6 +69,8 @@ export function GameQuestion({ showResult = false }: { showResult?: boolean }) {
     if (answerLocked) return
     const pairs = Object.entries(matchSelection.pairs).map(([l, r]) => `${l}→${r}`)
     setSelected(pairs)
+    setYourAnswer(pairs)
+    setAnswerLocked(true)
     sendAnswer(q.id, pairs, Date.now())
   }
 
@@ -90,7 +101,7 @@ export function GameQuestion({ showResult = false }: { showResult?: boolean }) {
         </span>
         <div className="flex items-center gap-2">
           <span className="font-display text-sm font-bold" style={{ color: 'var(--text-secondary)' }}>
-            {q.type.replace('-', ' ')}
+            {q.questionType.replace('-', ' ')}
           </span>
         </div>
       </div>
@@ -131,7 +142,7 @@ export function GameQuestion({ showResult = false }: { showResult?: boolean }) {
       {!showResult ? (
         <>
           {/* Multiple choice / True-False */}
-          {(q.type === 'multiple-choice' || q.type === 'true-false') && q.options && (
+          {(q.questionType === 'multiple-choice' || q.questionType === 'true-false') && q.options && (
             <div className="grid gap-3">
               {q.options.map((opt, i) => (
                 <motion.button
@@ -150,7 +161,7 @@ export function GameQuestion({ showResult = false }: { showResult?: boolean }) {
           )}
 
           {/* Fill in the blank */}
-          {q.type === 'fill-blank' && (
+          {q.questionType === 'fill-blank' && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <input
                 className="input-pop text-center text-lg"
@@ -179,7 +190,7 @@ export function GameQuestion({ showResult = false }: { showResult?: boolean }) {
           )}
 
           {/* Multiple select */}
-          {q.type === 'multiple-select' && q.options && (
+          {q.questionType === 'multiple-select' && q.options && (
             <div>
               <div className="grid gap-3">
                 {q.options.map((opt, i) => (
@@ -214,7 +225,7 @@ export function GameQuestion({ showResult = false }: { showResult?: boolean }) {
           )}
 
           {/* Poll */}
-          {q.type === 'poll' && q.options && (
+          {q.questionType === 'poll' && q.options && (
             <div className="grid gap-3">
               {q.options.map((opt, i) => (
                 <motion.button
@@ -233,7 +244,7 @@ export function GameQuestion({ showResult = false }: { showResult?: boolean }) {
           )}
 
           {/* Ordering */}
-          {q.type === 'ordering' && (
+          {q.questionType === 'ordering' && (
             <div>
               <p className="font-body font-semibold text-sm text-center mb-4" style={{ color: 'var(--text-secondary)', opacity: 0.6 }}>
                 Drag to reorder (tap on mobile)
@@ -284,7 +295,7 @@ export function GameQuestion({ showResult = false }: { showResult?: boolean }) {
           )}
 
           {/* Match pairs */}
-          {q.type === 'match-pairs' && q.pairs && (
+          {q.questionType === 'match-pairs' && q.pairs && (
             <div>
               <p className="font-body font-semibold text-sm text-center mb-4" style={{ color: 'var(--text-secondary)', opacity: 0.6 }}>
                 Tap a left item, then tap its match on the right
@@ -354,7 +365,7 @@ export function GameQuestion({ showResult = false }: { showResult?: boolean }) {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: i * 0.1 }}
                     className={`option-btn ${correct ? 'correct' : ''} ${selected === opt && !correct ? 'wrong' : ''}`}
-                    disabled
+                    aria-disabled
                   >
                     <span className="font-body font-bold">{opt}</span>
                     {correct && <span className="float-right">✓</span>}

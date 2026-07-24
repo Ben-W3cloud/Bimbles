@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { FloatingBubbles } from '../components/FloatingBubbles'
+import InteractiveDemo from '../components/InteractiveDemo'
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -15,42 +16,7 @@ const stagger = {
   visible: { transition: { staggerChildren: 0.08 } },
 }
 
-const DEMO_QUESTIONS = [
-  { q: 'What planet is known as the Red Planet?', options: ['Venus', 'Mars', 'Jupiter', 'Saturn'], correct: 1 },
-  { q: 'Which element has the chemical symbol "O"?', options: ['Gold', 'Osmium', 'Oxygen', 'Oganesson'], correct: 2 },
-  { q: 'How many continents are there?', options: ['5', '6', '7', '8'], correct: 2 },
-]
-
 export default function Landing() {
-  const [showDemo, setShowDemo] = useState(false)
-  const [demoIndex, setDemoIndex] = useState(0)
-  const [demoAnswer, setDemoAnswer] = useState<number | null>(null)
-  const [demoScore, setDemoScore] = useState(0)
-  const [demoDone, setDemoDone] = useState(false)
-
-  const handleDemoAnswer = (idx: number) => {
-    if (demoAnswer !== null) return
-    setDemoAnswer(idx)
-    if (idx === DEMO_QUESTIONS[demoIndex].correct) {
-      setDemoScore(s => s + 1)
-    }
-    setTimeout(() => {
-      if (demoIndex < DEMO_QUESTIONS.length - 1) {
-        setDemoIndex(i => i + 1)
-        setDemoAnswer(null)
-      } else {
-        setDemoDone(true)
-      }
-    }, 1200)
-  }
-
-  const resetDemo = () => {
-    setDemoIndex(0)
-    setDemoAnswer(null)
-    setDemoScore(0)
-    setDemoDone(false)
-  }
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -128,12 +94,12 @@ export default function Landing() {
             <Link to="/create" className="btn-gum text-lg">
               Launch App
             </Link>
-            <button
-              onClick={() => { setShowDemo(true); resetDemo() }}
+            <a
+              href="#see-it-in-action"
               className="btn-grape text-lg"
             >
               Try Demo Quiz
-            </button>
+            </a>
           </motion.div>
         </motion.div>
 
@@ -143,87 +109,25 @@ export default function Landing() {
         <div className="blob blob-mint w-64 h-64 bottom-0 left-1/4" style={{ opacity: 0.15 }} />
       </section>
 
-      {/* Demo Quiz Modal */}
-      {showDemo && (
+      {/* See It In Action */}
+      <section id="see-it-in-action" className="relative z-10 px-6 py-20 md:px-12" style={{ background: 'var(--bg-secondary)' }}>
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: 'rgba(45, 27, 78, 0.6)', backdropFilter: 'blur(8px)' }}
-          onClick={() => setShowDemo(false)}
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="max-w-4xl mx-auto text-center"
         >
-          <motion.div
-            initial={{ scale: 0.8, y: 40 }}
-            animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.8, y: 40 }}
-            transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-            className="card-pop p-8 max-w-lg w-full"
-            onClick={e => e.stopPropagation()}
-          >
-            {!demoDone ? (
-              <>
-                <div className="flex justify-between items-center mb-6">
-                  <span className="font-display text-sm font-bold" style={{ color: 'var(--gum-500)' }}>
-                    Question {demoIndex + 1}/{DEMO_QUESTIONS.length}
-                  </span>
-                  <span className="font-display text-sm font-bold" style={{ color: 'var(--grape-500)' }}>
-                    Score: {demoScore}
-                  </span>
-                </div>
-                <h3 className="font-display text-xl font-bold mb-6" style={{ color: 'var(--text-primary)' }}>
-                  {DEMO_QUESTIONS[demoIndex].q}
-                </h3>
-                <div className="grid gap-3">
-                  {DEMO_QUESTIONS[demoIndex].options.map((opt, i) => {
-                    let cls = 'option-btn'
-                    if (demoAnswer !== null) {
-                      if (i === DEMO_QUESTIONS[demoIndex].correct) cls += ' correct'
-                      else if (i === demoAnswer) cls += ' wrong'
-                    }
-                    return (
-                      <motion.button
-                        key={i}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.08 }}
-                        className={cls}
-                        disabled={demoAnswer !== null}
-                        onClick={() => handleDemoAnswer(i)}
-                      >
-                        {opt}
-                      </motion.button>
-                    )
-                  })}
-                </div>
-              </>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="text-center py-8"
-              >
-                <div className="text-5xl mb-4">
-                  {demoScore === DEMO_QUESTIONS.length ? '🎉' : demoScore >= 2 ? '👏' : '🫧'}
-                </div>
-                <h3 className="font-display text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-                  {demoScore}/{DEMO_QUESTIONS.length}
-                </h3>
-                <p className="font-body font-semibold mb-6" style={{ color: 'var(--text-secondary)' }}>
-                  {demoScore === DEMO_QUESTIONS.length ? 'Perfect score! You\'re a Bimbles natural.' : 'Not bad! Imagine the full experience with friends.'}
-                </p>
-                <Link
-                  to="/create"
-                  className="btn-gum"
-                  onClick={() => setShowDemo(false)}
-                >
-                  Create Your Own
-                </Link>
-              </motion.div>
-            )}
-          </motion.div>
+          <h2 className="font-display text-3xl md:text-5xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
+            See It In Action
+          </h2>
+          <p className="font-body font-semibold text-lg mb-10" style={{ color: 'var(--text-secondary)', opacity: 0.7 }}>
+            Click an answer. Get instant feedback. Feel the rush.
+          </p>
+          <div className="card-pop p-6 md:p-8 max-w-lg mx-auto">
+            <InteractiveDemo />
+          </div>
         </motion.div>
-      )}
+      </section>
 
       {/* Game Modes */}
       <section className="relative z-10 px-6 py-20 md:px-12">

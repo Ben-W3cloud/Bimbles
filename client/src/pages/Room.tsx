@@ -264,7 +264,7 @@ export default function Room() {
                   textShadow: '4px 4px 0 rgba(114, 46, 209, 0.2)',
                 }}
               >
-                {store.activeQuestion ? 'GO!' : '3'}
+                {store.timeRemaining > 0 ? store.timeRemaining : 'GO!'}
               </motion.div>
             </motion.div>
           )}

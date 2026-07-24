@@ -1,9 +1,24 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { generateQuestions, createRoom } from '../utils/api'
 import type { Question, QuestionType, Difficulty, GameMode, Theme, RoomConfig } from '../utils/types'
 import { FloatingBubbles } from '../components/FloatingBubbles'
+
+const LOADING_MESSAGES = [
+  "Generating brain-melting questions...",
+  "Consulting the quiz gods...",
+  "Shuffling the knowledge deck...",
+  "Charging the fun meters...",
+  "Warming up the confetti cannons...",
+  "Calibrating the hype...",
+  "Loading the memes...",
+  "Almost there...",
+  "Hold on to your hats...",
+  "Preparing mind-blowing trivia...",
+  "Cranking up the difficulty...",
+  "Making Kahoot jealous...",
+]
 
 // ── PDF parsing (lazy loaded) ──
 async function extractPdfText(file: File): Promise<string> {
@@ -51,6 +66,7 @@ export default function Create() {
   const [step, setStep] = useState(0) // 0: input, 1: config, 2: loading, 3: review
   const [sourceText, setSourceText] = useState('')
   const [pdfName, setPdfName] = useState('')
+  const [loadingMessage, setLoadingMessage] = useState('')
 
   // Config
   const [difficulty, setDifficulty] = useState<Difficulty>('standard')
@@ -63,9 +79,25 @@ export default function Create() {
   const [territoryRounds, setTerritoryRounds] = useState(4)
   const [territoryQPerRound, setTerritoryQPerRound] = useState(2)
 
+  // Teams
+  const [teamNames, setTeamNames] = useState<string[]>(['Team A', 'Team B'])
   // Generated
   const [questions, setQuestions] = useState<Question[]>([])
   const [error, setError] = useState('')
+
+  // Cycle through loading messages
+  useEffect(() => {
+    if (step !== 2) {
+      setLoadingMessage('')
+      return
+    }
+    let index = 0
+    const interval = setInterval(() => {
+      setLoadingMessage(LOADING_MESSAGES[index % LOADING_MESSAGES.length])
+      index++
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [step])
 
   const handlePdfUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -119,6 +151,7 @@ export default function Create() {
       gameMode,
       playerCap,
       theme,
+      teams: gameMode === 'team-battle' ? teamNames : undefined,
       territoryRounds: gameMode === 'territory' ? territoryRounds : undefined,
       territoryQuestionsPerRound: gameMode === 'territory' ? territoryQPerRound : undefined,
     }
@@ -317,6 +350,61 @@ export default function Create() {
                 </div>
               </div>
 
+              {/* Team Battle config */}
+              {gameMode === 'team-battle' && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="card-pop p-6 mb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="font-display font-bold text-sm" style={{ color: 'var(--text-secondary)' }}>Teams</label>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          const names = playerCap >= 4 ? ['Team A', 'Team B', 'Team C', 'Team D'] : ['Team A', 'Team B']
+                          setTeamNames(names)
+                        }}
+                        className="text-xs font-body font-bold px-3 py-1.5 rounded-lg"
+                        style={{ background: 'rgba(114, 46, 209, 0.06)', color: 'var(--text-secondary)' }}
+                      >
+                        Preset
+                      </button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    {teamNames.map((name, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <input
+                          className="input-pop text-sm flex-1"
+                          value={name}
+                          onChange={e => {
+                            const next = [...teamNames]
+                            next[i] = e.target.value
+                            setTeamNames(next)
+                          }}
+                          placeholder={`Team ${String.fromCharCode(65 + i)}`}
+                        />
+                        {teamNames.length > 2 && (
+                          <button
+                            onClick={() => setTeamNames(teamNames.filter((_, j) => j !== i))}
+                            className="text-xs font-bold w-7 h-7 rounded-lg flex items-center justify-center"
+                            style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444' }}
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  {teamNames.length < 4 && (
+                    <button
+                      onClick={() => setTeamNames([...teamNames, `Team ${String.fromCharCode(65 + teamNames.length)}`])}
+                      className="mt-2 text-xs font-body font-bold px-3 py-1.5 rounded-lg"
+                      style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10B981' }}
+                    >
+                      + Add Team
+                    </button>
+                  )}
+                </motion.div>
+              )}
+
               {/* Territory config */}
               {gameMode === 'territory' && (
                 <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="card-pop p-6 mb-4">
@@ -381,21 +469,43 @@ export default function Create() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center py-32"
+              className="flex flex-col items-center justify-center py-20"
             >
               <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }}
+                animate={{ rotate: [0, 10, -10, 0] }}
+                transition={{ duration: 0.5, repeat: Infinity }}
                 className="text-6xl mb-6"
               >
                 🫧
               </motion.div>
-              <h2 className="font-display text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+              <h2 className="font-display text-2xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
                 Cooking up questions...
               </h2>
-              <p className="font-body font-semibold mt-2" style={{ color: 'var(--text-secondary)', opacity: 0.6 }}>
-                AI is reading your content
-              </p>
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={loadingMessage}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.3 }}
+                  className="font-body font-semibold text-center"
+                  style={{ color: 'var(--text-secondary)', opacity: 0.7 }}
+                >
+                  {loadingMessage}
+                </motion.p>
+              </AnimatePresence>
+              <motion.div
+                className="mt-6 w-64 h-2"
+                style={{ background: 'rgba(114, 46, 209, 0.1)' }}
+              >
+                <motion.div
+                  className="h-full"
+                  style={{ background: 'linear-gradient(90deg, var(--gum-500), var(--grape-500))' }}
+                  initial={{ width: 0 }}
+                  animate={{ width: '100%' }}
+                  transition={{ duration: 2, repeat: Infinity, repeatType: 'reverse' }}
+                />
+              </motion.div>
             </motion.div>
           )}
 

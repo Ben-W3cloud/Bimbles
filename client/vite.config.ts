@@ -13,4 +13,17 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          groq: ['groq-sdk'],
+          pdf: ['pdfjs-dist'],
+          animations: ['framer-motion'],
+          router: ['react-router-dom'],
+          zustand: ['zustand'],
+        },
+      },
+    },
+  },
 })

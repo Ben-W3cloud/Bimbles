@@ -7,7 +7,10 @@ type MessageHandler = (data: any) => void
 
 let ws: WebSocket | null = null
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+let pingTimer: ReturnType<typeof setInterval> | null = null
 let currentRoomCode: string | null = null
+let latency = 0
+let lastPingTime = 0
 
 export function connectWS(
   roomCode: string,
@@ -28,14 +31,41 @@ export function connectWS(
         token,
         role,
       }))
+      
+      // Start ping interval for latency measurement
+      pingTimer = setInterval(() => {
+        if (ws?.readyState === WebSocket.OPEN) {
+          lastPingTime = Date.now()
+          try {
+            ws.send('ping')
+          } catch {
+            // Connection might have closed
+          }
+        }
+      }, 10000)
     }
 
     ws.onmessage = (event) => {
-      const msg = JSON.parse(event.data)
+      const data = event.data
+      
+      // Handle ping/pong
+      if (data === 'pong') {
+        latency = Date.now() - lastPingTime
+        return
+      }
+      
+      const msg = JSON.parse(data)
       handleMessage(msg, resolve, roomCode)
     }
 
     ws.onclose = () => {
+      // Clear ping timer
+      if (pingTimer) {
+        clearInterval(pingTimer)
+        pingTimer = null
+      }
+      latency = 0
+      
       // Auto-reconnect after 2s
       if (currentRoomCode === roomCode) {
         reconnectTimer = setTimeout(() => {
@@ -78,6 +108,10 @@ function handleMessage(
       store.setRoomState(msg.state as ClientRoomState)
       break
 
+    case 'room:teams-updated':
+      store.setTeams(msg.players as { nickname: string; team: string }[])
+      break
+
     case 'room:player-joined':
       // Re-fetch state handled by server
       break
@@ -89,13 +123,14 @@ function handleMessage(
 
     case 'game:countdown':
       store.setPhase('countdown')
+      store.setTimeRemaining(msg.seconds)
       break
 
     case 'game:question':
       store.setPhase('active')
       store.setActiveQuestion({
         id: msg.id,
-        type: msg.type,
+        questionType: msg.questionType,
         question: msg.question,
         options: msg.options,
         timeLimit: msg.timeLimit,
@@ -127,6 +162,11 @@ function handleMessage(
 
     case 'game:territory-update':
       store.setTerritory(msg.zones as TerritoryZone[], store.territoryRound)
+      break
+
+    case 'host:end':
+      store.setPhase('end')
+      store.setEndData([], [])
       break
 
     case 'game:end':
@@ -170,12 +210,37 @@ export function sendChangeMode(mode: string) {
   ws.send(JSON.stringify({ type: 'host:change-mode', mode }))
 }
 
+export function sendShuffleTeams() {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return
+  ws.send(JSON.stringify({ type: 'host:shuffle-teams' }))
+}
+
+export function sendAssignTeams(assignments: Record<string, string>) {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return
+  ws.send(JSON.stringify({ type: 'host:assign-teams', assignments }))
+}
+
 export function disconnectWS() {
   currentRoomCode = null
   if (reconnectTimer) clearTimeout(reconnectTimer)
+  if (pingTimer) clearInterval(pingTimer)
   if (ws) {
     ws.onclose = null
     ws.close()
     ws = null
   }
+  latency = 0
+  pingTimer = null
+}
+
+// Connection quality indicator
+export function getConnectionStatus() {
+  if (latency < 100) return { icon: '⚡', color: 'green', label: 'Excellent' }
+  if (latency < 300) return { icon: '🟢', color: 'green', label: 'Good' }
+  if (latency < 500) return { icon: '🟡', color: 'yellow', label: 'OK' }
+  return { icon: '🔴', color: 'red', label: 'Slow' }
+}
+
+export function getLatency() {
+  return latency
 }

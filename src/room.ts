@@ -49,6 +49,10 @@ export function deleteRoom(code: string) {
   rooms.delete(code)
 }
 
+export function getAllRooms(): Map<string, RoomState> {
+  return rooms
+}
+
 export function addPlayer(code: string, token: string, nickname: string, isSpectator: boolean): { ok: boolean; reason?: string } {
   const room = rooms.get(code)
   if (!room) return { ok: false, reason: 'Room not found' }
@@ -268,13 +272,39 @@ export function revealAnswers(code: string): {
 }
 
 export function getStandings(room: RoomState): StandingEntry[] {
-  const prevStandings = [...room.players.values()]
-    .filter(p => !p.isSpectator)
+  const players = [...room.players.values()].filter(p => !p.isSpectator)
+
+  if (room.mode === 'team-battle') {
+    // Aggregate scores by team
+    const teamScores = new Map<string, { points: number; members: { nickname: string; points: number; streak: number }[] }>()
+    for (const p of players) {
+      if (!p.team) continue
+      const entry = teamScores.get(p.team) || { points: 0, members: [] }
+      entry.points += p.score
+      entry.members.push({ nickname: p.nickname, points: p.score, streak: p.streak })
+      teamScores.set(p.team, entry)
+    }
+
+    return [...teamScores.entries()]
+      .sort((a, b) => b[1].points - a[1].points)
+      .map(([teamName, data], i) => ({
+        rank: i + 1,
+        nickname: teamName,
+        points: data.points,
+        streak: 0,
+        rankChange: 0,
+        token: `team:${teamName}`,
+        team: teamName,
+        members: data.members,
+      }))
+  }
+
+  // Individual standings (sprint, battle-royale, territory)
+  const prevStandings = players
     .sort((a, b) => b.score - a.score)
     .map((p, i) => ({ token: p.token, rank: i + 1 }))
 
-  const standings: StandingEntry[] = [...room.players.values()]
-    .filter(p => !p.isSpectator)
+  return players
     .sort((a, b) => b.score - a.score)
     .map((p, i) => {
       const prev = prevStandings.find(s => s.token === p.token)
@@ -289,8 +319,6 @@ export function getStandings(room: RoomState): StandingEntry[] {
         eliminated: p.eliminated,
       }
     })
-
-  return standings
 }
 
 export function resetRoom(code: string) {
@@ -337,4 +365,40 @@ export function shuffleQuestions(code: string) {
     const j = Math.floor(Math.random() * (i + 1));
     [room.questions[i], room.questions[j]] = [room.questions[j], room.questions[i]]
   }
+}
+
+// ── Team management ──
+
+export function shuffleTeams(code: string) {
+  const room = rooms.get(code)
+  if (!room || !room.config.teams || room.config.teams.length === 0) return
+
+  const teamNames = [...room.config.teams]
+  const playerList = [...room.players.values()].filter(p => !p.isSpectator)
+
+  // Shuffle players randomly
+  const shuffled = [...playerList].sort(() => Math.random() - 0.5)
+
+  // Assign teams round-robin to ensure even distribution
+  shuffled.forEach((player, i) => {
+    player.team = teamNames[i % teamNames.length]
+  })
+}
+
+export function assignTeams(code: string, assignments: Record<string, string>) {
+  const room = rooms.get(code)
+  if (!room) return
+
+  for (const [token, team] of Object.entries(assignments)) {
+    const player = room.players.get(token)
+    if (player) player.team = team
+  }
+}
+
+export function getTeamAssignments(code: string): { nickname: string; team: string }[] {
+  const room = rooms.get(code)
+  if (!room) return []
+  return [...room.players.values()]
+    .filter(p => !p.isSpectator && p.team)
+    .map(p => ({ nickname: p.nickname, team: p.team! }))
 }
