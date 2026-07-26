@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "bun run --watch src/index.ts",
-    "build": "cd client && bun run build && cp -r dist ../src/dist",
+    "build": "cd client && npm run build",
     "start": "bun run src/index.ts"
   },
   "dependencies": {

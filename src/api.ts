@@ -1,7 +1,6 @@
 // ── API routes ──
 
 import { Hono } from 'hono'
-import { cors } from 'hono/cors'
 import Groq from 'groq-sdk'
 import { createHash } from 'node:crypto'
 import type { Question, RoomConfig } from './types.js'
@@ -10,9 +9,13 @@ import { redis } from './redis.js'
 import { checkAiRateLimit, checkRoomRateLimit } from './rateLimiter.js'
 import { aiRequests, roomCreations, questionsGenerated } from './metrics.js'
 
-const app = new Hono()
+// Warn loudly if GROQ_API_KEY is missing at startup
+if (!process.env.GROQ_API_KEY || process.env.GROQ_API_KEY === 'none') {
+  console.warn('⚠️  GROQ_API_KEY is not set — AI generation will fail. Set it in .env or your environment.')
+}
 
-app.use('/*', cors())
+const app = new Hono()
+// NOTE: CORS is applied globally in index.ts — do NOT add it here
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || 'none' })
 const model = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile'

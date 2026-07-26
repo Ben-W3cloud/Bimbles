@@ -20,13 +20,16 @@ export function GameQuestion({ showResult = false }: { showResult?: boolean }) {
 
   // Timer countdown
   useEffect(() => {
-    if (!q || showResult) return
+    if (!q || showResult || answerLocked) {
+      if (timerRef.current) clearInterval(timerRef.current)
+      return
+    }
     setTimeRemaining(q.timeLimit)
     timerRef.current = setInterval(() => {
       setTimeRemaining(useGameStore.getState().timeRemaining - 1)
     }, 1000)
     return () => clearInterval(timerRef.current)
-  }, [q?.id, showResult])
+  }, [q?.id, showResult, answerLocked])
 
   // Init order for ordering questions
   useEffect(() => {

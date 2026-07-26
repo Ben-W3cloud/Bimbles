@@ -6,6 +6,7 @@ import { FloatingBubbles } from './components/FloatingBubbles'
 const Landing = lazy(() => import('./pages/Landing'))
 const Create = lazy(() => import('./pages/Create'))
 const Room = lazy(() => import('./pages/Room'))
+const NotFound = lazy(() => import('./pages/NotFound'))
 
 const LoadingFallback = () => (
   <motion.div
@@ -51,6 +52,7 @@ export default function App() {
             <Route path="/" element={<PageWrapper><Landing /></PageWrapper>} />
             <Route path="/create" element={<PageWrapper><Create /></PageWrapper>} />
             <Route path="/:code" element={<PageWrapper><Room /></PageWrapper>} />
+            <Route path="*" element={<PageWrapper><NotFound /></PageWrapper>} />
           </Routes>
         </Suspense>
       </AnimatePresence>

@@ -1,0 +1,14 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+  bimbles:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis

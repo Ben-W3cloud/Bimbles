@@ -74,7 +74,7 @@ export default function Create() {
   const [timePerQuestion, setTimePerQuestion] = useState(20)
   const [selectedTypes, setSelectedTypes] = useState<QuestionType[]>(['multiple-choice'])
   const [gameMode, setGameMode] = useState<GameMode>('sprint')
-  const [playerCap, setPlayerCap] = useState(10)
+  const [playerCap, setPlayerCap] = useState(20)
   const [theme, setTheme] = useState<Theme>('none')
   const [territoryRounds, setTerritoryRounds] = useState(4)
   const [territoryQPerRound, setTerritoryQPerRound] = useState(2)
@@ -423,8 +423,8 @@ export default function Create() {
 
               {/* Player cap */}
               <div className="card-pop p-6 mb-4">
-                <label className="font-display font-bold text-sm block mb-2" style={{ color: 'var(--text-secondary)' }}>Max Players (1–10)</label>
-                <input type="number" min={1} max={10} value={playerCap} onChange={e => setPlayerCap(Math.min(10, Math.max(1, Number(e.target.value))))} className="input-pop" />
+                <label className="font-display font-bold text-sm block mb-2" style={{ color: 'var(--text-secondary)' }}>Max Players (1–20)</label>
+                <input type="number" min={1} max={20} value={playerCap} onChange={e => setPlayerCap(Math.min(20, Math.max(1, Number(e.target.value))))} className="input-pop" />
               </div>
 
               {/* Theme */}

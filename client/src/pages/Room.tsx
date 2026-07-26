@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../store/gameStore'
-import { connectWS, disconnectWS, sendHostStart, sendPlayAgain, sendChangeMode, sendReaction } from '../utils/ws'
+import { connectWS, disconnectWS, sendHostStart, sendPlayAgain, sendChangeMode, sendReaction, getConnectionStatus, getLatency } from '../utils/ws'
 import { QRCodeSVG } from 'qrcode.react'
 import { FloatingBubbles } from '../components/FloatingBubbles'
 import { GameQuestion } from '../components/GameQuestion'
@@ -22,9 +22,11 @@ export default function Room() {
   const [role, setRole] = useState<'player' | 'spectator'>('player')
   const [joined, setJoined] = useState(false)
   const [joinError, setJoinError] = useState('')
+  const [isConnecting, setIsConnecting] = useState(false)
   const [showEndControls, setShowEndControls] = useState(false)
   const [showPlayAgainModal, setShowPlayAgainModal] = useState(false)
   const [showModeModal, setShowModeModal] = useState(false)
+  const [latencyInfo, setLatencyInfo] = useState({ icon: '⚡', color: 'green', label: 'Excellent', ms: 0 })
 
   // Apply theme
   useEffect(() => {
@@ -39,14 +41,26 @@ export default function Room() {
     return () => { disconnectWS() }
   }, [])
 
+  // Latency updates
+  useEffect(() => {
+    if (!joined) return
+    const iv = setInterval(() => {
+      setLatencyInfo({ ...getConnectionStatus(), ms: getLatency() })
+    }, 2000)
+    return () => clearInterval(iv)
+  }, [joined])
+
   const handleJoin = async () => {
     if (!nickname.trim() || !code) return
     setJoinError('')
+    setIsConnecting(true)
     try {
       await connectWS(code, nickname.trim(), role)
       setJoined(true)
     } catch (err: any) {
       setJoinError(err.message || 'Failed to join')
+    } finally {
+      setIsConnecting(false)
     }
   }
 
@@ -110,8 +124,8 @@ export default function Room() {
             <p className="text-sm font-bold mb-4 text-center" style={{ color: '#EF4444' }}>{joinError}</p>
           )}
 
-          <button onClick={handleJoin} className="btn-gum w-full">
-            Join
+          <button onClick={handleJoin} disabled={isConnecting} className="btn-gum w-full">
+            {isConnecting ? 'Connecting...' : 'Join'}
           </button>
         </motion.div>
       </motion.div>
@@ -137,9 +151,14 @@ export default function Room() {
             {code}
           </span>
           {store.mode && (
-            <span className="font-body font-bold text-xs px-2 py-1 rounded-lg" style={{ background: 'rgba(114, 46, 209, 0.08)', color: 'var(--text-secondary)' }}>
+            <span className="font-body font-bold text-xs px-2 py-1 rounded-lg capitalize" style={{ background: 'rgba(114, 46, 209, 0.08)', color: 'var(--text-secondary)' }}>
               {store.mode}
             </span>
+          )}
+          {joined && (
+             <span className="font-body font-bold text-xs px-2 py-1 rounded-lg" style={{ background: 'rgba(114, 46, 209, 0.08)', color: latencyInfo.color === 'red' ? '#EF4444' : latencyInfo.color === 'yellow' ? '#EAB308' : '#10B981', opacity: 0.8 }}>
+               {latencyInfo.icon} {latencyInfo.ms}ms
+             </span>
           )}
         </div>
         <div className="flex items-center gap-3">
@@ -228,6 +247,9 @@ export default function Room() {
               {/* Host controls */}
               {store.isHost && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                  <button onClick={() => setShowModeModal(true)} className="btn-grape w-full text-sm mb-3 !py-2.5">
+                    Change Game Mode
+                  </button>
                   <button onClick={sendHostStart} className="btn-gum w-full text-lg">
                     Start Game
                   </button>

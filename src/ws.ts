@@ -162,15 +162,30 @@ export function handleDisconnect(code: string, token: string) {
   if (!code || !token) return
   Room.disconnectPlayer(code, token)
 
-  // Clean up empty rooms after 60s
   const room = Room.getRoom(code)
-  if (room && ![...room.players.values()].some(p => p.connected)) {
+  if (!room) return
+
+  const anyConnected = [...room.players.values()].some(p => p.connected)
+
+  // Clean up empty rooms after 60 s (all players disconnected from lobby)
+  if (!anyConnected) {
     setTimeout(() => {
       const r = Room.getRoom(code)
       if (r && ![...r.players.values()].some(p => p.connected)) {
         Room.deleteRoom(code)
       }
     }, 60_000)
+  }
+
+  // Clean up orphaned in-progress rooms after 5 minutes with no connections
+  if (!anyConnected && room.phase !== 'lobby') {
+    setTimeout(() => {
+      const r = Room.getRoom(code)
+      if (r && ![...r.players.values()].some(p => p.connected)) {
+        Room.deleteRoom(code)
+        console.log(`🧹 Cleaned up orphaned room ${code} after 5 min with no connections`)
+      }
+    }, 5 * 60_000)
   }
 }
 
@@ -209,6 +224,13 @@ export function handleMessage(ws: ServerWebSocket<WSData>, raw: string) {
 
       if (room.phase === 'lobby') {
         const pc = [...room.players.values()].filter(p => !p.isSpectator).length
+        // Broadcast updated state to all existing players so their player list refreshes
+        for (const sock of (roomSockets.get(d.roomCode) || [])) {
+          if (sock === ws) continue // new joiner already got their state above
+          try {
+            sock.send(JSON.stringify({ type: 'room:state', state: buildClientState(room, sock.data.token) }))
+          } catch {}
+        }
         broadcast(d.roomCode, { type: 'room:player-joined', nickname: msg.nickname, count: pc })
       }
       break

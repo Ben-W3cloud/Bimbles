@@ -38,6 +38,9 @@ interface GameState {
   // Reactions
   reactions: { id: number; emoji: string; nickname: string }[]
 
+  // Network
+  reconnectFailed: boolean
+
   // Actions
   setRoomState: (state: ClientRoomState) => void
   setPhase: (phase: Phase) => void
@@ -53,6 +56,7 @@ interface GameState {
   setTeams: (players: { nickname: string; team: string }[]) => void
   addReaction: (emoji: string, nickname: string) => void
   removeReaction: (id: number) => void
+  setReconnectFailed: (failed: boolean) => void
   reset: () => void
 }
 
@@ -81,6 +85,7 @@ const initial = {
   territoryZones: [],
   territoryRound: 0,
   reactions: [],
+  reconnectFailed: false,
 }
 
 export const useGameStore = create<GameState>((set) => ({
@@ -125,5 +130,6 @@ export const useGameStore = create<GameState>((set) => ({
   removeReaction: (id) => set((s) => ({
     reactions: s.reactions.filter(r => r.id !== id),
   })),
+  setReconnectFailed: (failed) => set({ reconnectFailed: failed }),
   reset: () => set(initial),
 }))

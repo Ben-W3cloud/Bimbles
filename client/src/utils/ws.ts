@@ -69,7 +69,13 @@ export function connectWS(
       // Auto-reconnect after 2s
       if (currentRoomCode === roomCode) {
         reconnectTimer = setTimeout(() => {
-          connectWS(roomCode, nickname, role).catch(() => {})
+          connectWS(roomCode, nickname, role)
+            .then(() => {
+              useGameStore.getState().setReconnectFailed(false)
+            })
+            .catch(() => {
+              useGameStore.getState().setReconnectFailed(true)
+            })
         }, 2000)
       }
     }
