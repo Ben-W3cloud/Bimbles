@@ -18,9 +18,9 @@ export function GameQuestion({ showResult = false }: { showResult?: boolean }) {
   const [matchSelection, setMatchSelection] = useState<{ left: string | null; pairs: Record<string, string> }>({ left: null, pairs: {} })
   const timerRef = useRef<ReturnType<typeof setInterval>>()
 
-  // Timer countdown
+  // Timer countdown - continues even after answer is selected
   useEffect(() => {
-    if (!q || showResult || answerLocked) {
+    if (!q || showResult) {
       if (timerRef.current) clearInterval(timerRef.current)
       return
     }
@@ -29,7 +29,7 @@ export function GameQuestion({ showResult = false }: { showResult?: boolean }) {
       setTimeRemaining(useGameStore.getState().timeRemaining - 1)
     }, 1000)
     return () => clearInterval(timerRef.current)
-  }, [q?.id, showResult, answerLocked])
+  }, [q?.id, showResult])
 
   // Init order for ordering questions
   useEffect(() => {
@@ -45,35 +45,28 @@ export function GameQuestion({ showResult = false }: { showResult?: boolean }) {
   const setAnswerLocked = useGameStore(s => s.setAnswerLocked)
 
   const handleSubmit = (answer: string | string[]) => {
-    if (answerLocked) return
     setSelected(answer)
     setYourAnswer(answer)
-    setAnswerLocked(true)
     sendAnswer(q.id, answer, Date.now())
   }
 
   const handleMultiSubmit = () => {
-    if (answerLocked || multiSelected.length === 0) return
+    if (multiSelected.length === 0) return
     setSelected(multiSelected)
     setYourAnswer(multiSelected)
-    setAnswerLocked(true)
     sendAnswer(q.id, multiSelected, Date.now())
   }
 
   const handleOrderSubmit = () => {
-    if (answerLocked) return
     setSelected(orderItems)
     setYourAnswer(orderItems)
-    setAnswerLocked(true)
     sendAnswer(q.id, orderItems, Date.now())
   }
 
   const handleMatchSubmit = () => {
-    if (answerLocked) return
     const pairs = Object.entries(matchSelection.pairs).map(([l, r]) => `${l}→${r}`)
     setSelected(pairs)
     setYourAnswer(pairs)
-    setAnswerLocked(true)
     sendAnswer(q.id, pairs, Date.now())
   }
 
@@ -154,7 +147,6 @@ export function GameQuestion({ showResult = false }: { showResult?: boolean }) {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.08 }}
                   className={`option-btn ${selected === opt ? 'selected' : ''}`}
-                  disabled={answerLocked}
                   onClick={() => handleSubmit(opt)}
                 >
                   <span className="font-body font-bold">{opt}</span>
@@ -171,15 +163,14 @@ export function GameQuestion({ showResult = false }: { showResult?: boolean }) {
                 placeholder="Type your answer..."
                 value={fillValue}
                 onChange={e => setFillValue(e.target.value)}
-                disabled={answerLocked}
                 onKeyDown={e => {
-                  if (e.key === 'Enter' && fillValue.trim() && !answerLocked) {
+                  if (e.key === 'Enter' && fillValue.trim()) {
                     handleSubmit(fillValue.trim())
                   }
                 }}
                 autoFocus
               />
-              {!answerLocked && fillValue.trim() && (
+              {fillValue.trim() && (
                 <motion.button
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -203,7 +194,6 @@ export function GameQuestion({ showResult = false }: { showResult?: boolean }) {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.08 }}
                     className={`option-btn ${multiSelected.includes(opt) ? 'selected' : ''}`}
-                    disabled={answerLocked}
                     onClick={() => {
                       setMultiSelected(prev =>
                         prev.includes(opt) ? prev.filter(x => x !== opt) : [...prev, opt]
@@ -214,7 +204,7 @@ export function GameQuestion({ showResult = false }: { showResult?: boolean }) {
                   </motion.button>
                 ))}
               </div>
-              {!answerLocked && multiSelected.length > 0 && (
+              {multiSelected.length > 0 && (
                 <motion.button
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -237,7 +227,6 @@ export function GameQuestion({ showResult = false }: { showResult?: boolean }) {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.08 }}
                   className={`option-btn ${selected === opt ? 'selected' : ''}`}
-                  disabled={answerLocked}
                   onClick={() => handleSubmit(opt)}
                 >
                   <span className="font-body font-bold">{opt}</span>
@@ -284,16 +273,14 @@ export function GameQuestion({ showResult = false }: { showResult?: boolean }) {
                   </motion.div>
                 ))}
               </div>
-              {!answerLocked && (
-                <motion.button
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="btn-gum w-full mt-4"
-                  onClick={handleOrderSubmit}
-                >
-                  Lock In Order
-                </motion.button>
-              )}
+              <motion.button
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="btn-gum w-full mt-4"
+                onClick={handleOrderSubmit}
+              >
+                Lock In Order
+              </motion.button>
             </div>
           )}
 
@@ -340,7 +327,7 @@ export function GameQuestion({ showResult = false }: { showResult?: boolean }) {
                   ))}
                 </div>
               </div>
-              {!answerLocked && Object.keys(matchSelection.pairs).length === (q.pairs?.length || 0) && (
+              {Object.keys(matchSelection.pairs).length === (q.pairs?.length || 0) && (
                 <motion.button
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -411,19 +398,6 @@ export function GameQuestion({ showResult = false }: { showResult?: boolean }) {
             </motion.div>
           )}
         </div>
-      )}
-
-      {/* Locked indicator */}
-      {answerLocked && !showResult && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center mt-6"
-        >
-          <span className="font-display font-bold text-sm px-4 py-2 rounded-xl" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10B981' }}>
-            Answer locked in!
-          </span>
-        </motion.div>
       )}
     </div>
   )
