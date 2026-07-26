@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FloatingBubbles } from '../components/FloatingBubbles'
 import InteractiveDemo from '../components/InteractiveDemo'
@@ -17,6 +17,20 @@ const stagger = {
 }
 
 export default function Landing() {
+  const navigate = useNavigate()
+  const [showLaunchModal, setShowLaunchModal] = useState(false)
+  const [roomCode, setRoomCode] = useState('')
+  const [joinError, setJoinError] = useState('')
+
+  const handleJoin = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!roomCode.trim()) {
+      setJoinError('Please enter a room code')
+      return
+    }
+    navigate(`/${roomCode.trim().toUpperCase()}`)
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -91,9 +105,9 @@ export default function Landing() {
           </motion.p>
 
           <motion.div variants={fadeUp} custom={3} className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/create" className="btn-gum text-lg">
+            <button onClick={() => setShowLaunchModal(true)} className="btn-gum text-lg">
               Launch App
-            </Link>
+            </button>
             <a
               href="#see-it-in-action"
               className="btn-grape text-lg"
@@ -264,6 +278,87 @@ export default function Landing() {
           Pop your brain. Share the fun.
         </p>
       </footer>
+
+      {/* Launch App Modal */}
+      <AnimatePresence>
+        {showLaunchModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(45, 27, 78, 0.6)', backdropFilter: 'blur(8px)' }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="card-pop p-8 max-w-md w-full text-center relative"
+            >
+              <button
+                onClick={() => { setShowLaunchModal(false); setJoinError(''); setRoomCode('') }}
+                className="absolute top-4 right-4 text-xl font-bold w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+                style={{ background: 'rgba(114, 46, 209, 0.06)', color: 'var(--text-secondary)' }}
+              >
+                ✕
+              </button>
+
+              <h3 className="font-display text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
+                Let's Play!
+              </h3>
+              <p className="font-body font-semibold text-sm mb-6" style={{ color: 'var(--text-secondary)', opacity: 0.7 }}>
+                Choose whether you want to host your own quiz or join an existing game room.
+              </p>
+
+              <div className="space-y-4">
+                {/* Create card */}
+                <button
+                  onClick={() => navigate('/create')}
+                  className="w-full p-4 rounded-2xl text-left border-2 transition-all hover:scale-[1.02] flex items-center gap-4"
+                  style={{ background: 'rgba(255, 45, 138, 0.05)', borderColor: 'rgba(255, 45, 138, 0.2)' }}
+                >
+                  <span className="text-3xl">🪄</span>
+                  <div>
+                    <div className="font-display font-bold text-base" style={{ color: 'var(--gum-500)' }}>Create a Quiz</div>
+                    <div className="font-body text-xs font-semibold" style={{ color: 'var(--text-secondary)', opacity: 0.8 }}>AI-powered trivia setup in seconds</div>
+                  </div>
+                </button>
+
+                <div className="relative py-2">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-dashed" style={{ borderColor: 'rgba(114, 46, 209, 0.15)' }} />
+                  </div>
+                  <span className="relative px-3 text-xs font-display font-bold bg-[#FAF8FF] dark:bg-[#1C142A]" style={{ color: 'var(--text-secondary)' }}>
+                    OR
+                  </span>
+                </div>
+
+                {/* Join Form */}
+                <form onSubmit={handleJoin} className="space-y-3">
+                  <div className="relative">
+                    <input
+                      className="input-pop text-center font-display text-lg uppercase tracking-widest"
+                      placeholder="ENTER ROOM CODE"
+                      value={roomCode}
+                      onChange={e => {
+                        setRoomCode(e.target.value.toUpperCase().slice(0, 6))
+                        setJoinError('')
+                      }}
+                      maxLength={6}
+                    />
+                  </div>
+                  {joinError && (
+                    <p className="text-xs font-bold text-center" style={{ color: '#EF4444' }}>{joinError}</p>
+                  )}
+                  <button type="submit" className="btn-grape w-full py-3">
+                    Join Game 🎮
+                  </button>
+                </form>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }

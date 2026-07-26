@@ -158,6 +158,7 @@ export default function Create() {
 
     try {
       const { code } = await createRoom(config, questions, hostToken)
+      localStorage.setItem(`bimbles-token-${code}`, hostToken)
       navigate(`/${code}`)
     } catch {
       setError('Failed to create room')
