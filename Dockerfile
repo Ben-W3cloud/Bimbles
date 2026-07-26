@@ -15,11 +15,10 @@ COPY tsconfig.json ./
 COPY src/ ./src/
 COPY --from=client-builder /app/client/dist ./dist
 
-# Create non-root user for security
-RUN useradd -m -u 1000 bimbles && \
-    chown -R bimbles:bimbles /app
+# Set ownership to the default 'bun' user (UID 1000) that already exists in oven/bun
+RUN chown -R bun:bun /app
 
-USER bimbles
+USER bun
 
 EXPOSE 3000
 CMD ["bun", "run", "src/index.ts"]
