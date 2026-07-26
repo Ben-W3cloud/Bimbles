@@ -36,10 +36,10 @@ app.get('/metrics', async (c) => {
 })
 
 // Serve built React app — after all API routes
-app.use('/*', serveStatic({ root: './client/dist' }))
+app.use('/*', serveStatic({ root: './dist' }))
 
 // SPA fallback — handles React Router client-side routes
-app.get('/*', serveStatic({ path: './client/dist/index.html' }))
+app.get('/*', serveStatic({ path: './dist/index.html' }))
 
 // ── Bun.serve ──
 const port = parseInt(process.env.PORT || '3000')
