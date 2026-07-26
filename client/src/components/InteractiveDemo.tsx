@@ -114,8 +114,6 @@ export default function InteractiveDemo() {
             <motion.button
               key={index}
               initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.08, duration: 0.3 }}
               className={className}
               disabled={selectedIndex !== null}
               onClick={() => handleSelect(index)}
@@ -123,8 +121,9 @@ export default function InteractiveDemo() {
               whileTap={{ scale: 0.98 }}
               animate={{
                 scale: isSelected ? (isCorrectAnswer ? [1, 1.05, 1] : [1, 0.95, 1]) : 1,
+                opacity: 1, x: 0 
               }}
-              transition={{ duration: 0.2 }}
+              transition={{ delay: index * 0.08, duration: 0.3 }}
             >
               {option}
               {showFeedback && isCorrectAnswer && (
