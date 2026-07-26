@@ -1,6 +1,5 @@
 // ── API client ──
 
-const API_URL = import.meta.env.VITE_API_URL || ''
 
 export async function generateQuestions(
   text: string,
@@ -8,7 +7,7 @@ export async function generateQuestions(
   difficulty: string,
   types: string[]
 ) {
-  const res = await fetch(`${API_URL}/api/generate`, {
+  const res = await fetch(`/api/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text, count, difficulty, types }),
@@ -22,7 +21,7 @@ export async function createRoom(
   questions: any[],
   hostToken: string
 ) {
-  const res = await fetch(`${API_URL}/api/room/create`, {
+  const res = await fetch(`/api/room/create`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ config, questions, hostToken }),

@@ -18,8 +18,8 @@ export function connectWS(
   role: 'player' | 'spectator'
 ): Promise<string> {
   return new Promise((resolve, reject) => {
-    const WS_URL = import.meta.env.VITE_WS_URL || `ws://${window.location.host}`
-    const url = `${WS_URL}/ws?room=${roomCode}`
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    const url = `${protocol}//${window.location.host}/ws?room=${roomCode}`
     const token = localStorage.getItem(`bimbles-token-${roomCode}`) || undefined
 
     ws = new WebSocket(url)

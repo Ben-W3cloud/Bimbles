@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "bun run --watch src/index.ts",
+    "build": "cd frontend && bun run build && cp -r dist ../backend/dist",
     "start": "bun run src/index.ts"
   },
   "dependencies": {

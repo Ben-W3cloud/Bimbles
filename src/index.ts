@@ -13,12 +13,15 @@ import { WSData, roomSockets, handleMessage, handleDisconnect } from './ws.js'
 
 // ── HTTP app ──
 const app = new Hono()
-app.use('/*', cors())
+app.use('/*', cors({
+  origin: [
+    'http://localhost:5173',
+    'https://bimbles.vercel.app',      // add this
+    'https://bimbles.fun',             // add this when domain is connected
+  ],
+  allowMethods: ['GET', 'POST'],
+}))
 app.route('/', apiRoutes)
-
-// Serve built frontend in production
-app.use('/*', serveStatic({ root: './client/dist' }))
-app.get('*', serveStatic({ root: './client/dist', path: 'index.html' }))
 
 // Update active rooms gauge periodically
 setInterval(() => {
@@ -28,12 +31,18 @@ setInterval(() => {
 // Add metrics endpoint
 app.get('/metrics', async (c) => {
   c.header('Content-Type', 'text/plain')
-  const metrics = await registry.getMetrics()
-  return new Response(metrics)
+  const metrics = await registry.getMetricsAsJSON()
+  return new Response(JSON.stringify(metrics))
 })
 
+// Serve built React app — after all API routes
+app.use('/*', serveStatic({ root: './client/dist' }))
+
+// SPA fallback — handles React Router client-side routes
+app.get('/*', serveStatic({ path: './client/dist/index.html' }))
+
 // ── Bun.serve ──
-const port = Number(process.env.PORT) || 3000
+const port = parseInt(process.env.PORT || '3000')
 
 Bun.serve<WSData>({
   port,
@@ -69,7 +78,7 @@ Bun.serve<WSData>({
       activeConnections.inc()
     },
 
-    message(ws: ServerWebSocket<WSData>, raw: string | ArrayBuffer) {
+    message(ws: ServerWebSocket<WSData>, raw: string | Buffer<ArrayBuffer>) {
       const text = typeof raw === 'string' ? raw : new TextDecoder().decode(raw)
       
       // Handle ping/pong for latency measurement
