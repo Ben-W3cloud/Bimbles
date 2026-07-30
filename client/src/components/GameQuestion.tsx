@@ -34,8 +34,8 @@ export function GameQuestion({ showResult = false }: { showResult?: boolean }) {
   // Init order for ordering questions
   useEffect(() => {
     if (q?.questionType === 'ordering' && q.order) {
-      const shuffled = [...q.order].sort(() => Math.random() - 0.5)
-      setOrderItems(shuffled)
+      // Use AI-provided order, no shuffling
+      setOrderItems([...q.order])
     }
   }, [q?.id])
 
@@ -190,9 +190,9 @@ export function GameQuestion({ showResult = false }: { showResult?: boolean }) {
                 {q.options.map((opt, i) => (
                   <motion.button
                     key={i}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.08 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: i * 0.05 }}
                     className={`option-btn ${multiSelected.includes(opt) ? 'selected' : ''}`}
                     onClick={() => {
                       setMultiSelected(prev =>
@@ -243,11 +243,8 @@ export function GameQuestion({ showResult = false }: { showResult?: boolean }) {
               </p>
               <div className="space-y-2">
                 {orderItems.map((item, i) => (
-                  <motion.div
+                  <div
                     key={item}
-                    layout
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
                     className="option-btn flex items-center gap-3 cursor-grab"
                     draggable
                     onDragStart={e => {
@@ -270,7 +267,7 @@ export function GameQuestion({ showResult = false }: { showResult?: boolean }) {
                       {i + 1}
                     </span>
                     <span className="font-body font-bold">{item}</span>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
               <motion.button
@@ -290,23 +287,23 @@ export function GameQuestion({ showResult = false }: { showResult?: boolean }) {
               <p className="font-body font-semibold text-sm text-center mb-4" style={{ color: 'var(--text-secondary)', opacity: 0.6 }}>
                 Tap a left item, then tap its match on the right
               </p>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  {q.pairs.map(p => (
-                    <motion.button
-                      key={p.left}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className={`option-btn text-center text-sm ${matchSelection.left === p.left ? 'selected' : ''} ${matchSelection.pairs[p.left] ? '!border-green-500 !bg-green-50' : ''}`}
-                      onClick={() => setMatchSelection(prev => ({ ...prev, left: p.left }))}
-                      disabled={!!matchSelection.pairs[p.left]}
-                    >
-                      {p.left}
-                    </motion.button>
-                  ))}
-                </div>
-                <div className="space-y-2">
-                  {[...q.pairs].sort(() => 0.5 - Math.random()).map(p => (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    {q.pairs.map(p => (
+                      <motion.button
+                        key={p.left}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className={`option-btn text-center text-sm ${matchSelection.left === p.left ? 'selected' : ''} ${matchSelection.pairs[p.left] ? '!border-green-500 !bg-green-50' : ''}`}
+                        onClick={() => setMatchSelection(prev => ({ ...prev, left: p.left }))}
+                        disabled={!!matchSelection.pairs[p.left]}
+                      >
+                        {p.left}
+                      </motion.button>
+                    ))}
+                  </div>
+                  <div className="space-y-2">
+                    {q.pairs.map(p => (
                     <motion.button
                       key={p.right}
                       initial={{ opacity: 0, x: 10 }}

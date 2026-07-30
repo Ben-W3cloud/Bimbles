@@ -7,8 +7,11 @@ const MEDAL_EMOJIS = ['👑', '🥈', '🥉']
 export function Podium() {
   const podium = useGameStore(s => s.podium)
   const yourToken = useGameStore(s => s.yourToken)
+  const mode = useGameStore(s => s.mode)
 
   if (podium.length === 0) return null
+
+  const isTeamMode = mode === 'team-battle'
 
   // Reorder for podium display: 2nd, 1st, 3rd
   const ordered = podium.length >= 3
@@ -27,12 +30,14 @@ export function Podium() {
         className="font-display text-3xl font-bold text-center mb-8"
         style={{ color: 'var(--text-primary)' }}
       >
-        Game Over!
+        {isTeamMode ? 'Team Victory!' : 'Game Over!'}
       </motion.h2>
 
       <div className="flex items-end justify-center gap-4 mb-8" style={{ minHeight: 200 }}>
         {ordered.map((entry, i) => {
           const originalIndex = podium.length >= 3 ? (i === 0 ? 1 : i === 1 ? 0 : 2) : i
+          const isTeam = entry.token.startsWith('team:')
+          
           return (
             <motion.div
               key={entry.token}
@@ -41,20 +46,20 @@ export function Podium() {
               transition={{ delay: 0.3 + i * 0.2, type: 'spring', stiffness: 200, damping: 15 }}
               className="flex flex-col items-center"
             >
-              {/* Medal emoji */}
+              {/* Medal emoji or crown for team winner */}
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.8 + i * 0.2, type: 'spring', stiffness: 300 }}
                 className="text-3xl mb-2"
               >
-                {MEDAL_EMOJIS[originalIndex]}
+                {isTeam && originalIndex === 0 ? '👑' : MEDAL_EMOJIS[originalIndex]}
               </motion.div>
 
               {/* Name */}
               <span className="font-display font-bold text-sm mb-2 text-center max-w-[100px] truncate" style={{ color: 'var(--text-primary)' }}>
                 {entry.nickname}
-                {entry.token === yourToken && ' ★'}
+                {!isTeam && entry.token === yourToken && ' ★'}
               </span>
 
               {/* Points */}

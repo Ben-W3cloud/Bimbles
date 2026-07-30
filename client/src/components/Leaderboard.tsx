@@ -10,6 +10,7 @@ export function Leaderboard() {
   if (standings.length === 0) return null
 
   const isTeamMode = mode === 'team-battle'
+  const isBattleRoyale = mode === 'battle-royale'
 
   return (
     <div>
@@ -19,6 +20,8 @@ export function Leaderboard() {
       <div className="space-y-3">
         {standings.map((entry, i) => {
           const isTeam = entry.token.startsWith('team:')
+          const player = players.find(p => p.nickname === entry.nickname)
+          
           return (
             <motion.div
               key={entry.token}
@@ -45,15 +48,23 @@ export function Leaderboard() {
                   {entry.nickname}
                   {!isTeam && entry.token === yourToken && ' (you)'}
                   {!isTeam && entry.eliminated && ' 💀'}
+                  {/* Team tag during game */}
+                  {!isTeam && entry.team && (
+                    <span className="ml-2 px-2 py-0.5 rounded-md text-xs font-body" 
+                          style={{ background: 'rgba(114, 46, 209, 0.1)', color: 'var(--grape-500)' }}>
+                      {entry.team}
+                    </span>
+                  )}
                 </div>
                 {isTeam && entry.members && (
                   <div className="font-body font-semibold text-xs truncate" style={{ color: 'var(--text-secondary)', opacity: 0.6 }}>
                     {entry.members.map(m => m.nickname).join(', ')}
                   </div>
                 )}
-                {!isTeam && entry.team && (
-                  <div className="font-body font-semibold text-xs" style={{ color: 'var(--text-secondary)', opacity: 0.6 }}>
-                    {entry.team}
+                {/* Battle Royale lives */}
+                {!isTeam && isBattleRoyale && player && (
+                  <div className="font-body font-semibold text-xs mt-0.5" style={{ color: '#EF4444' }}>
+                    {'❤️'.repeat(Math.max(0, player.lives || 0))}
                   </div>
                 )}
               </div>
