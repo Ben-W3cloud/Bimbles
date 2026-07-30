@@ -1,10 +1,19 @@
 // ── Scoring logic ──
 
+// ── Scoring Configuration ──
+// Max score: 974 pts (answered in < 3 seconds)
+// Floor score: 600 pts (answered at time limit)
+// Curve: Quadratic decay for smoother distribution
+
 export function calculateScore(elapsed: number, timeLimit: number, correct: boolean): number {
   if (!correct) return 0
-  if (elapsed < 5) return 970
-  if (elapsed >= timeLimit) return 500
-  return Math.max(500, Math.round(970 - ((elapsed - 5) / (timeLimit - 5)) * 470))
+  if (elapsed < 3) return 974
+  if (elapsed >= timeLimit) return 600
+  
+  // Quadratic decay: faster drop early, then levels off
+  const ratio = (elapsed - 3) / (timeLimit - 3)
+  const score = 974 - (ratio * ratio) * 374
+  return Math.round(Math.max(600, score))
 }
 
 export function levenshtein(a: string, b: string): number {

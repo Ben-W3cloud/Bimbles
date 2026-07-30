@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../store/gameStore'
-import { connectWS, disconnectWS, sendHostStart, sendPlayAgain, sendChangeMode, sendReaction, getConnectionStatus, getLatency } from '../utils/ws'
+import { connectWS, disconnectWS, sendHostStart, sendPlayAgain, sendChangeMode, sendReaction, getConnectionStatus, getLatency, sendPlayerAssignTeam, sendShuffleTeams } from '../utils/ws'
 import { QRCodeSVG } from 'qrcode.react'
 import { FloatingBubbles } from '../components/FloatingBubbles'
 import { GameQuestion } from '../components/GameQuestion'
@@ -217,36 +217,97 @@ export default function Room() {
                 </button>
               </div>
 
-              {/* Players grid */}
+              {/* Players grid / Team columns */}
               <div className="card-pop p-6 mb-6">
                 <h3 className="font-display font-bold text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-                  Players ({store.playerCount})
+                  {store.mode === 'team-battle' ? 'Teams' : `Players (${store.playerCount})`}
                 </h3>
-                <div className="flex flex-wrap gap-2">
-                  <AnimatePresence>
-                    {store.players.filter(p => !p.isSpectator).map(p => (
-                      <motion.div
-                        key={p.nickname}
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0, opacity: 0 }}
-                        className="px-4 py-2 rounded-xl font-body font-bold text-sm"
-                        style={{
-                          background: 'linear-gradient(135deg, var(--gum-500), var(--grape-500))',
-                          color: 'white',
-                        }}
-                      >
-                        {p.nickname}
-                        {p.nickname === store.yourNickname && store.isHost && ' 👑'}
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </div>
+                
+                {store.mode === 'team-battle' && store.config && store.config.teams ? (
+                  // Team columns layout
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {store.config.teams.map((teamName, teamIndex) => {
+                      const teamPlayers = store.players.filter(p => p.team === teamName && !p.isSpectator)
+                      const isFull = teamPlayers.length >= Math.ceil(store.playerCount / (store.config!.teams!.length || 1))
+                      
+                      return (
+                        <div key={teamName} className="text-center">
+                          <h4 className="font-display font-bold text-sm mb-3 px-3 py-2 rounded-xl" 
+                              style={{ background: 'rgba(114, 46, 209, 0.08)', color: 'var(--text-primary)' }}>
+                            {teamName}
+                          </h4>
+                          <div className="space-y-2">
+                            <AnimatePresence>
+                              {teamPlayers.map(p => (
+                                <motion.div
+                                  key={p.nickname}
+                                  initial={{ scale: 0, opacity: 0 }}
+                                  animate={{ scale: 1, opacity: 1 }}
+                                  exit={{ scale: 0, opacity: 0 }}
+                                  className="px-3 py-2 rounded-lg font-body font-bold text-xs"
+                                  style={{
+                                    background: 'linear-gradient(135deg, var(--gum-500), var(--grape-500))',
+                                    color: 'white',
+                                  }}
+                                >
+                                  {p.nickname}
+                                  {p.nickname === store.yourNickname && store.isHost && ' 👑'}
+                                </motion.div>
+                              ))}
+                            </AnimatePresence>
+                            
+                            {/* Empty slot - clickable for self-assignment */}
+                            {!isFull && store.phase === 'lobby' && (
+                              <button
+                                onClick={() => sendPlayerAssignTeam(teamName)}
+                                className="w-full py-2 rounded-lg border-2 border-dashed font-body font-bold text-xs transition-all hover:scale-105"
+                                style={{ 
+                                  borderColor: 'rgba(114, 46, 209, 0.2)',
+                                  color: 'var(--text-secondary)',
+                                  opacity: 0.6,
+                                }}
+                              >
+                                + Join
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  // Flat player list for non-team modes
+                  <div className="flex flex-wrap gap-2">
+                    <AnimatePresence>
+                      {store.players.filter(p => !p.isSpectator).map(p => (
+                        <motion.div
+                          key={p.nickname}
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0, opacity: 0 }}
+                          className="px-4 py-2 rounded-xl font-body font-bold text-sm"
+                          style={{
+                            background: 'linear-gradient(135deg, var(--gum-500), var(--grape-500))',
+                            color: 'white',
+                          }}
+                        >
+                          {p.nickname}
+                          {p.nickname === store.yourNickname && store.isHost && ' 👑'}
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                )}
               </div>
 
               {/* Host controls */}
               {store.isHost && (
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+                  {store.mode === 'team-battle' && (
+                    <button onClick={sendShuffleTeams} className="btn-grape w-full text-sm !py-2.5">
+                      Shuffle Teams
+                    </button>
+                  )}
                   <button onClick={() => setShowModeModal(true)} className="btn-grape w-full text-sm mb-3 !py-2.5">
                     Change Game Mode
                   </button>

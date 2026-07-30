@@ -226,6 +226,11 @@ export function sendAssignTeams(assignments: Record<string, string>) {
   ws.send(JSON.stringify({ type: 'host:assign-teams', assignments }))
 }
 
+export function sendPlayerAssignTeam(team: string) {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return
+  ws.send(JSON.stringify({ type: 'player:assign-team', team }))
+}
+
 export function disconnectWS() {
   currentRoomCode = null
   if (reconnectTimer) clearTimeout(reconnectTimer)

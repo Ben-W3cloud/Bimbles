@@ -63,6 +63,7 @@ export interface PlayerInfo {
   eliminated: boolean
   team?: string
   connected: boolean
+  lives?: number
 }
 
 export interface ClientRoomState {

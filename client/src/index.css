@@ -429,6 +429,77 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 0.95rem;
     border-radius: 16px;
   }
+
+  /* Improve touch targets */
+  button, .option-btn {
+    min-height: 44px;
+  }
+
+  /* Better spacing on small screens */
+  .space-y-2 > * + * {
+    margin-top: 0.5rem;
+  }
+
+  .space-y-3 > * + * {
+    margin-top: 0.75rem;
+  }
+
+  .space-y-4 > * + * {
+    margin-top: 1rem;
+  }
+
+  /* Ensure modals fit on small screens */
+  .card-pop {
+    max-width: calc(100vw - 32px);
+  }
+
+  /* Improve team columns on mobile */
+  .grid-cols-2 {
+    gap: 0.75rem;
+  }
+
+  /* Better text sizing */
+  .font-display {
+    line-height: 1.2;
+  }
+
+  /* Reduce padding on very small screens */
+  .p-6 {
+    padding: 1rem;
+  }
+
+  .p-8 {
+    padding: 1.25rem;
+  }
+}
+
+/* ── Very small screens (320px+) ── */
+@media (max-width: 360px) {
+  .text-5xl {
+    font-size: 2.5rem;
+  }
+
+  .text-7xl {
+    font-size: 3rem;
+  }
+
+  .text-8xl {
+    font-size: 3.5rem;
+  }
+
+  .text-9xl {
+    font-size: 4rem;
+  }
+
+  .px-4 {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .py-3 {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
 }
 
 /* Interactive Demo Styles */

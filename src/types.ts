@@ -1,5 +1,6 @@
-// ── Shared types for Bimbles ──
+// ── Shared Types ──
 
+// ── Enums ──
 export type QuestionType =
   | 'multiple-choice'
   | 'true-false'
@@ -80,13 +81,14 @@ export interface RoomState {
   countdownValue?: number
 }
 
-// ── WebSocket message types ──
+// ── WebSocket Message Types ──
 
 // Client → Server
 export type ClientMessage =
   | { type: 'join'; nickname: string; token?: string; role: 'player' | 'spectator' }
   | { type: 'answer'; questionId: string; answer: string | string[]; timestamp: number }
   | { type: 'reaction'; emoji: string }
+  | { type: 'player:assign-team'; team: string }
   | { type: 'host:start' }
   | { type: 'host:end' }
   | { type: 'host:play-again'; reshuffle: boolean }

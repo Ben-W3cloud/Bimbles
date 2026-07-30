@@ -1,15 +1,18 @@
-// ── WebSocket game loop — single source of truth ──
+// ── WebSocket Game Loop ──
+// Single source of truth for all real-time game logic
 
 import type { ServerWebSocket } from 'bun'
 import type { ClientMessage, ServerMessage, RoomState } from './types.js'
 import * as Room from './room.js'
 
+// ── Types ──
 export interface WSData {
   token: string
   roomCode: string
   nickname: string
 }
 
+// ── Socket Management ──
 export const roomSockets = new Map<string, Set<ServerWebSocket<WSData>>>()
 
 function broadcast(code: string, msg: ServerMessage, excludeToken?: string) {
@@ -34,6 +37,7 @@ function sendTo(code: string, token: string, msg: ServerMessage) {
   }
 }
 
+// ── State Builders ──
 export function buildClientState(room: RoomState, token: string) {
   const players = [...room.players.values()].map(p => ({
     nickname: p.nickname,
@@ -61,6 +65,7 @@ export function buildClientState(room: RoomState, token: string) {
   }
 }
 
+// ── Game Loop ──
 export function runQuestionCycle(code: string) {
   const room = Room.getRoom(code)
   if (!room) return
@@ -158,6 +163,7 @@ function sendEndGame(code: string) {
   })
 }
 
+// ── Connection Management ──
 export function handleDisconnect(code: string, token: string) {
   if (!code || !token) return
   Room.disconnectPlayer(code, token)
@@ -189,12 +195,14 @@ export function handleDisconnect(code: string, token: string) {
   }
 }
 
+// ── Message Handlers ──
 export function handleMessage(ws: ServerWebSocket<WSData>, raw: string) {
   let msg: ClientMessage
   try { msg = JSON.parse(raw) } catch { return }
   const d = ws.data
 
   switch (msg.type) {
+    // ── Connection ──
     case 'join': {
       const room = Room.getRoom(d.roomCode)
       if (!room) {
@@ -236,6 +244,7 @@ export function handleMessage(ws: ServerWebSocket<WSData>, raw: string) {
       break
     }
 
+    // ── Gameplay ──
     case 'answer': {
       const r = Room.processAnswer(d.roomCode, d.token, msg.answer, msg.timestamp)
       if (r.locked) ws.send(JSON.stringify({ type: 'game:answer-locked' }))
@@ -247,6 +256,7 @@ export function handleMessage(ws: ServerWebSocket<WSData>, raw: string) {
       break
     }
 
+    // ── Host Controls ──
     case 'host:start': {
       const room = Room.getRoom(d.roomCode)
       if (!room || room.hostToken !== d.token) return
@@ -282,6 +292,25 @@ export function handleMessage(ws: ServerWebSocket<WSData>, raw: string) {
       if (!room || room.hostToken !== d.token) return
       Room.changeMode(d.roomCode, msg.mode)
       broadcast(d.roomCode, { type: 'room:state', state: buildClientState(room, d.token) })
+      break
+    }
+
+    case 'player:assign-team': {
+      // Allow any player to self-assign to a team
+      const room = Room.getRoom(d.roomCode)
+      if (!room || room.phase !== 'lobby') return
+      if (!room.config.teams || room.config.teams.length === 0) return
+      
+      const team = msg.team
+      if (!room.config.teams.includes(team)) return
+      
+      const player = room.players.get(d.token)
+      if (!player) return
+      
+      // Assign player to the requested team
+      player.team = team
+      const assignments = Room.getTeamAssignments(d.roomCode)
+      broadcast(d.roomCode, { type: 'room:teams-updated', players: assignments })
       break
     }
 

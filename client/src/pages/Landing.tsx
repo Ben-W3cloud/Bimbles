@@ -4,6 +4,57 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { FloatingBubbles } from '../components/FloatingBubbles'
 import InteractiveDemo from '../components/InteractiveDemo'
 
+// ── SVG Icon Components ──
+const LightningIcon = () => (
+  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="currentColor" />
+  </svg>
+)
+
+const CrownIcon = () => (
+  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M2 17l2-11 5 5 3-7 3 7 5-5 2 11H2z" fill="currentColor" />
+    <path d="M2 17h20v2H2z" fill="currentColor" />
+  </svg>
+)
+
+const UsersIcon = () => (
+  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" fill="currentColor" />
+    <circle cx="9" cy="7" r="4" fill="currentColor" />
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+  </svg>
+)
+
+const MapIcon = () => (
+  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="1 6 1 22 8 18 16 22 21 18 21 2 16 6 8 2 1 6" fill="currentColor" />
+    <line x1="16" y1="6" x2="16" y2="22" />
+    <line x1="8" y1="2" x2="8" y2="18" />
+  </svg>
+)
+
+const WandIcon = () => (
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M15 4V2" />
+    <path d="M15 16v-2" />
+    <path d="M8 9h2" />
+    <path d="M20 9h2" />
+    <path d="M17.8 11.8L19 13" />
+    <path d="M15 9h0" />
+    <path d="M17.8 6.2L19 5" />
+    <path d="M3 21l9-9" />
+    <path d="M12.2 6.2L11 5" />
+  </svg>
+)
+
+const PlayIcon = () => (
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+    <polygon points="5 3 19 12 5 21 5 3" />
+  </svg>
+)
+
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
   visible: (i: number) => ({
@@ -161,10 +212,10 @@ export default function Landing() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
           {[
-            { name: 'Sprint', icon: '⚡', desc: 'Fast-paced, no elimination. Pure speed.', color: 'var(--lemon-300)' },
-            { name: 'Battle Royale', icon: '👑', desc: '2 lives each. Wrong answer? You\'re out.', color: 'var(--coral-400)' },
-            { name: 'Team Battle', icon: '🤝', desc: 'Squad up. Combined scores win.', color: 'var(--mint-400)' },
-            { name: 'Territory', icon: '🗺️', desc: 'Claim zones. Defend your turf.', color: 'var(--gum-500)' },
+            { name: 'Sprint', icon: <LightningIcon />, desc: 'Fast-paced, no elimination. Pure speed.', color: 'var(--lemon-300)' },
+            { name: 'Battle Royale', icon: <CrownIcon />, desc: '2 lives each. Wrong answer? You\'re out.', color: 'var(--coral-400)' },
+            { name: 'Team Battle', icon: <UsersIcon />, desc: 'Squad up. Combined scores win.', color: 'var(--mint-400)' },
+            { name: 'Territory', icon: <MapIcon />, desc: 'Claim zones. Defend your turf.', color: 'var(--gum-500)' },
           ].map((mode, i) => (
             <motion.div
               key={mode.name}
@@ -175,7 +226,9 @@ export default function Landing() {
               whileHover={{ y: -6, scale: 1.02 }}
               className="card-pop p-6 text-center cursor-default"
             >
-              <div className="text-4xl mb-3">{mode.icon}</div>
+              <div className="text-4xl mb-3 flex items-center justify-center" style={{ color: mode.color }}>
+                {mode.icon}
+              </div>
               <h3 className="font-display text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
                 {mode.name}
               </h3>
@@ -317,7 +370,9 @@ export default function Landing() {
                   className="w-full p-4 rounded-2xl text-left border-2 transition-all hover:scale-[1.02] flex items-center gap-4"
                   style={{ background: 'rgba(255, 45, 138, 0.05)', borderColor: 'rgba(255, 45, 138, 0.2)' }}
                 >
-                  <span className="text-3xl">🪄</span>
+                  <span className="text-3xl flex items-center justify-center" style={{ color: 'var(--gum-500)' }}>
+                    <WandIcon />
+                  </span>
                   <div>
                     <div className="font-display font-bold text-base" style={{ color: 'var(--gum-500)' }}>Create a Quiz</div>
                     <div className="font-body text-xs font-semibold" style={{ color: 'var(--text-secondary)', opacity: 0.8 }}>AI-powered trivia setup in seconds</div>
@@ -350,8 +405,9 @@ export default function Landing() {
                   {joinError && (
                     <p className="text-xs font-bold text-center" style={{ color: '#EF4444' }}>{joinError}</p>
                   )}
-                  <button type="submit" className="btn-grape w-full py-3">
-                    Join Game 🎮
+                  <button type="submit" className="btn-grape w-full py-3 flex items-center justify-center gap-2">
+                    <PlayIcon />
+                    Join Game
                   </button>
                 </form>
               </div>
