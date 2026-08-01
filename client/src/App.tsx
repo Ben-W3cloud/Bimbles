@@ -1,7 +1,7 @@
 import { Routes, Route, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { lazy, Suspense } from 'react'
-import { FloatingBubbles } from './components/FloatingBubbles'
+import { LoadingSpinner } from './components/Spinner'
 
 const Landing = lazy(() => import('./pages/Landing'))
 const Create = lazy(() => import('./pages/Create'))
@@ -15,17 +15,7 @@ const LoadingFallback = () => (
     className="fixed inset-0 flex items-center justify-center"
     style={{ background: 'var(--bg-primary)' }}
   >
-    <FloatingBubbles />
-    <motion.div
-      initial={{ scale: 0.8 }}
-      animate={{ scale: 1 }}
-      className="card-pop p-6 text-center"
-    >
-      <div className="text-4xl mb-4">🎉</div>
-      <p className="font-display font-bold" style={{ color: 'var(--text-primary)' }}>
-        Loading...
-      </p>
-    </motion.div>
+    <LoadingSpinner message="Loading..." size="lg" />
   </motion.div>
 )
 

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { generateQuestions, createRoom } from '../utils/api'
 import type { Question, QuestionType, Difficulty, GameMode, Theme, RoomConfig } from '../utils/types'
 import { FloatingBubbles } from '../components/FloatingBubbles'
+import { LoadingSpinner } from '../components/Spinner'
 
 const LOADING_MESSAGES = [
   "Generating brain-melting questions...",
@@ -472,41 +473,7 @@ export default function Create() {
               exit={{ opacity: 0 }}
               className="flex flex-col items-center justify-center py-20"
             >
-              <motion.div
-                animate={{ rotate: [0, 10, -10, 0] }}
-                transition={{ duration: 0.5, repeat: Infinity }}
-                className="text-6xl mb-6"
-              >
-                🫧
-              </motion.div>
-              <h2 className="font-display text-2xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
-                Cooking up questions...
-              </h2>
-              <AnimatePresence mode="wait">
-                <motion.p
-                  key={loadingMessage}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.3 }}
-                  className="font-body font-semibold text-center"
-                  style={{ color: 'var(--text-secondary)', opacity: 0.7 }}
-                >
-                  {loadingMessage}
-                </motion.p>
-              </AnimatePresence>
-              <motion.div
-                className="mt-6 w-64 h-2"
-                style={{ background: 'rgba(114, 46, 209, 0.1)' }}
-              >
-                <motion.div
-                  className="h-full"
-                  style={{ background: 'linear-gradient(90deg, var(--gum-500), var(--grape-500))' }}
-                  initial={{ width: 0 }}
-                  animate={{ width: '100%' }}
-                  transition={{ duration: 2, repeat: Infinity, repeatType: 'reverse' }}
-                />
-              </motion.div>
+              <LoadingSpinner message={loadingMessage || 'Cooking up questions...'} size="lg" />
             </motion.div>
           )}
 
