@@ -9,6 +9,27 @@ import { redis } from './redis.js'
 import { checkAiRateLimit, checkRoomRateLimit } from './rateLimiter.js'
 import { aiRequests, roomCreations, questionsGenerated } from './metrics.js'
 
+// Sanitize question to prevent XSS
+function sanitizeQuestion(q: any): Question {
+  return {
+    id: Room.sanitizeInput(q.id || ''),
+    type: q.type,
+    question: Room.sanitizeInput(q.question || ''),
+    options: q.options?.map((opt: string) => Room.sanitizeInput(opt)),
+    correctAnswer: Array.isArray(q.correctAnswer) 
+      ? q.correctAnswer.map((ans: string) => Room.sanitizeInput(ans))
+      : Room.sanitizeInput(q.correctAnswer || ''),
+    explanation: Room.sanitizeInput(q.explanation || ''),
+    difficulty: Room.sanitizeInput(q.difficulty || ''),
+    strictMatch: q.strictMatch,
+    pairs: q.pairs?.map((pair: any) => ({
+      left: Room.sanitizeInput(pair.left),
+      right: Room.sanitizeInput(pair.right)
+    })),
+    order: q.order?.map((item: string) => Room.sanitizeInput(item))
+  }
+}
+
 // Warn loudly if GROQ_API_KEY is missing at startup
 if (!process.env.GROQ_API_KEY || process.env.GROQ_API_KEY === 'none') {
   console.warn('⚠️  GROQ_API_KEY is not set — AI generation will fail. Set it in .env or your environment.')
@@ -166,13 +187,15 @@ ${text.slice(0, 6000)}`,
     aiRequests.inc({ model: 'fallback', status: 'used' })
   }
 
-  // Validate and assign IDs
-  const validated = questions.slice(0, generateCount).map((q: any, i) => ({
-    ...q,
-    id: q.id || `q-${i}-${Date.now()}`,
-    difficulty: q.difficulty || difficulty,
-    type: q.type || types[0] || 'multiple-choice',
-  }))
+  // Validate, sanitize and assign IDs
+  const validated = questions.slice(0, generateCount).map((q: any, i) => 
+    sanitizeQuestion({
+      ...q,
+      id: q.id || `q-${i}-${Date.now()}`,
+      difficulty: q.difficulty || difficulty,
+      type: q.type || types[0] || 'multiple-choice',
+    })
+  )
 
   // Cache for 24 hours (non-blocking if Redis is down)
   try {

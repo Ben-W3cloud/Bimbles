@@ -56,6 +56,7 @@ export interface Player {
   eliminated: boolean
   currentAnswer?: string | string[]
   answerTimestamp?: number
+  tokenExpiry?: number
 }
 
 export interface TerritoryZone {
@@ -79,6 +80,7 @@ export interface RoomState {
   }
   questionStartTime?: number
   countdownValue?: number
+  disconnectedPlayers: Map<string, Player> // nickname -> Player (for reconnection)
 }
 
 // ── WebSocket Message Types ──

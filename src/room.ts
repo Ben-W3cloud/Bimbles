@@ -29,6 +29,7 @@ export function createRoom(hostToken: string, config: RoomConfig, questions: Que
     questions,
     currentQIndex: 0,
     currentRoundScores: new Map(),
+    disconnectedPlayers: new Map(),
   }
 
   if (config.gameMode === 'territory') {
@@ -53,31 +54,69 @@ export function getAllRooms(): Map<string, RoomState> {
   return rooms
 }
 
-export function addPlayer(code: string, token: string, nickname: string, isSpectator: boolean): { ok: boolean; reason?: string } {
+// Sanitize input to prevent XSS
+export function sanitizeInput(input: string): string {
+  return input
+    .replace(/&/g, '&')
+    .replace(/</g, '<')
+    .replace(/>/g, '>')
+    .replace(/"/g, '"')
+    .replace(/'/g, '&#039;')
+    .trim()
+}
+
+export function addPlayer(code: string, token: string, nickname: string, isSpectator: boolean): { ok: boolean; reason?: string; token?: string } {
   const room = rooms.get(code)
   if (!room) return { ok: false, reason: 'Room not found' }
 
-  // Check for reconnect
+  // Sanitize nickname
+  const sanitizedNickname = sanitizeInput(nickname)
+  if (sanitizedNickname.length === 0) return { ok: false, reason: 'Invalid nickname' }
+  if (sanitizedNickname.length > 20) return { ok: false, reason: 'Nickname too long (max 20 chars)' }
+
+  // Check for reconnect with same token
   const existing = room.players.get(token)
   if (existing) {
-    if (existing.nickname !== nickname) return { ok: false, reason: 'Nickname mismatch' }
+    if (existing.nickname !== sanitizedNickname) return { ok: false, reason: 'Nickname mismatch' }
+    // Check if token has expired
+    if (existing.tokenExpiry && Date.now() > existing.tokenExpiry) {
+      return { ok: false, reason: 'Token expired. Please rejoin with your nickname.' }
+    }
     existing.connected = true
-    return { ok: true }
+    return { ok: true, token }
   }
 
+  // Check for reconnect by nickname (from disconnected players)
+  const disconnectedPlayer = room.disconnectedPlayers.get(sanitizedNickname)
+  if (disconnectedPlayer && !isSpectator) {
+    // Restore player data with new token
+    const restoredPlayer: Player = {
+      ...disconnectedPlayer,
+      token,
+      connected: true,
+      tokenExpiry: undefined, // Clear expiry on reconnect
+    }
+    room.players.set(token, restoredPlayer)
+    room.disconnectedPlayers.delete(sanitizedNickname)
+    return { ok: true, token }
+  }
+
+  // Check if game already started
   if (room.phase !== 'lobby') return { ok: false, reason: 'Game already in progress' }
 
+  // Check room capacity
   if (!isSpectator) {
     const playerCount = [...room.players.values()].filter(p => !p.isSpectator).length
     if (playerCount >= room.config.playerCap) return { ok: false, reason: 'Room is full' }
   }
 
-  const nicknames = [...room.players.values()].map(p => p.nickname)
-  if (nicknames.includes(nickname)) return { ok: false, reason: 'Nickname taken' }
+  // Check if nickname is already taken by active player
+  const activeNicknames = [...room.players.values()].map(p => p.nickname)
+  if (activeNicknames.includes(sanitizedNickname)) return { ok: false, reason: 'Nickname already in use' }
 
   const player: Player = {
     token,
-    nickname,
+    nickname: sanitizedNickname,
     score: 0,
     streak: 0,
     lives: room.mode === 'battle-royale' ? 2 : Infinity,
@@ -87,14 +126,20 @@ export function addPlayer(code: string, token: string, nickname: string, isSpect
   }
 
   room.players.set(token, player)
-  return { ok: true }
+  return { ok: true, token }
 }
 
 export function disconnectPlayer(code: string, token: string) {
   const room = rooms.get(code)
   if (!room) return
   const player = room.players.get(token)
-  if (player) player.connected = false
+  if (player) {
+    player.connected = false
+    // Move to disconnected players map for potential reconnection
+    if (!player.isSpectator && !player.eliminated) {
+      room.disconnectedPlayers.set(player.nickname, { ...player })
+    }
+  }
 }
 
 export function getPlayerCount(room: RoomState): number {
@@ -111,13 +156,16 @@ export function startGame(code: string) {
     room.territory.round = 1
     room.territory.zones.forEach(z => z.owner = null)
   }
-  // Reset scores
+  // Reset scores and invalidate old tokens
   for (const p of room.players.values()) {
     p.score = 0
     p.streak = 0
     p.eliminated = false
+    p.tokenExpiry = Date.now() + (24 * 60 * 60 * 1000) // 24 hours from now
     if (room.mode === 'battle-royale') p.lives = 2
   }
+  // Clear disconnected players when game starts
+  room.disconnectedPlayers.clear()
 }
 
 export function advanceQuestion(code: string): { done: boolean } {
@@ -332,12 +380,15 @@ export function resetRoom(code: string) {
     p.streak = 0
     p.eliminated = false
     p.connected = true
+    p.tokenExpiry = undefined // Clear expiry on reset
     if (room.mode === 'battle-royale') p.lives = 2
   }
   if (room.territory) {
     room.territory.round = 0
     room.territory.zones.forEach(z => z.owner = null)
   }
+  // Clear disconnected players on reset
+  room.disconnectedPlayers.clear()
 }
 
 export function changeMode(code: string, mode: GameMode) {

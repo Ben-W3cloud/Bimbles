@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import { useGameStore } from '../store/gameStore'
 
 const MEDAL_COLORS = ['#FBBF24', '#9CA3AF', '#F97316']
-const MEDAL_EMOJIS = ['👑', '🥈', '🥉']
+const MEDAL_EMOJIS = ['👑', '🥈', '🥉'] // 1st, 2nd, 3rd place
 
 export function Podium() {
   const podium = useGameStore(s => s.podium)
@@ -46,14 +46,14 @@ export function Podium() {
               transition={{ delay: 0.3 + i * 0.2, type: 'spring', stiffness: 200, damping: 15 }}
               className="flex flex-col items-center"
             >
-              {/* Medal emoji or crown for team winner */}
+              {/* Medal emoji for winner */}
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.8 + i * 0.2, type: 'spring', stiffness: 300 }}
                 className="text-3xl mb-2"
               >
-                {isTeam && originalIndex === 0 ? '👑' : MEDAL_EMOJIS[originalIndex]}
+                {MEDAL_EMOJIS[originalIndex]}
               </motion.div>
 
               {/* Name */}

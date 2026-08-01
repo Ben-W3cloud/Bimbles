@@ -251,7 +251,7 @@ export default function Room() {
                                   }}
                                 >
                                   {p.nickname}
-                                  {p.nickname === store.yourNickname && store.isHost && ' 👑'}
+                                  {p.nickname === store.yourNickname && store.isHost && ' 🔑'}
                                 </motion.div>
                               ))}
                             </AnimatePresence>
@@ -292,7 +292,7 @@ export default function Room() {
                           }}
                         >
                           {p.nickname}
-                          {p.nickname === store.yourNickname && store.isHost && ' 👑'}
+                          {p.nickname === store.yourNickname && store.isHost && ' 🔑'}
                         </motion.div>
                       ))}
                     </AnimatePresence>

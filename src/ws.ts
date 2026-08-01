@@ -220,8 +220,18 @@ export function handleMessage(ws: ServerWebSocket<WSData>, raw: string) {
       }
 
       // Stamp token + nickname onto ws.data
-      d.token = token
-      d.nickname = msg.nickname
+      d.token = result.token || token
+      d.nickname = Room.sanitizeInput(msg.nickname)
+      
+      // Validate token expiry if reconnecting with existing token
+      if (msg.token) {
+        const player = room.players.get(d.token)
+        if (player && player.tokenExpiry && Date.now() > player.tokenExpiry) {
+          ws.send(JSON.stringify({ type: 'join:rejected', reason: 'Token expired. Please rejoin with your nickname.' }))
+          ws.close()
+          return
+        }
+      }
 
       // Register socket
       if (!roomSockets.has(d.roomCode)) roomSockets.set(d.roomCode, new Set())
