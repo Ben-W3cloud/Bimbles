@@ -64,10 +64,11 @@ const THEMES: { value: Theme; label: string; color: string }[] = [
 
 export default function Create() {
   const navigate = useNavigate()
-  const [step, setStep] = useState(0) // 0: input, 1: config, 2: loading, 3: review
+  const [step, setStep] = useState(0) // 0: input, 0.5: method select, 1: config, 2: loading, 3: review
   const [sourceText, setSourceText] = useState('')
   const [pdfName, setPdfName] = useState('')
   const [loadingMessage, setLoadingMessage] = useState('')
+  const [creationMethod, setCreationMethod] = useState<'ai' | 'manual' | null>(null)
 
   // Config
   const [difficulty, setDifficulty] = useState<Difficulty>('standard')
@@ -75,7 +76,7 @@ export default function Create() {
   const [timePerQuestion, setTimePerQuestion] = useState(20)
   const [selectedTypes, setSelectedTypes] = useState<QuestionType[]>(['multiple-choice'])
   const [gameMode, setGameMode] = useState<GameMode>('sprint')
-  const [playerCap, setPlayerCap] = useState(20)
+  const [playerCap, setPlayerCap] = useState(40)
   const [theme, setTheme] = useState<Theme>('none')
   const [territoryRounds, setTerritoryRounds] = useState(4)
   const [territoryQPerRound, setTerritoryQPerRound] = useState(2)
@@ -164,6 +165,19 @@ export default function Create() {
     } catch {
       setError('Failed to create room')
     }
+  }
+
+  const addManualQuestion = () => {
+    const newQuestion: Question = {
+      id: `manual-${Date.now()}`,
+      type: selectedTypes[0] || 'multiple-choice',
+      question: '',
+      options: selectedTypes[0] === 'multiple-choice' ? ['', '', '', ''] : undefined,
+      correctAnswer: '',
+      explanation: '',
+      difficulty: difficulty,
+    }
+    setQuestions([...questions, newQuestion])
   }
 
   // ── Question editing ──
@@ -259,8 +273,59 @@ export default function Create() {
                 </motion.p>
               )}
 
-              <button onClick={() => { if (sourceText.trim()) { setError(''); setStep(1) } else setError('Please provide some content first') }} className="btn-gum w-full">
-                Next: Configure
+              <button onClick={() => { if (sourceText.trim()) { setError(''); setStep(0.5) } else setError('Please provide some content first') }} className="btn-gum w-full">
+                Next: Choose Method
+              </button>
+            </motion.div>
+          )}
+
+          {/* Step 0.5: Method Selection */}
+          {step === 0.5 && (
+            <motion.div
+              key="method-select"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <h1 className="font-display text-3xl md:text-4xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
+                How do you want to create your quiz?
+              </h1>
+              <p className="font-body font-semibold mb-8" style={{ color: 'var(--text-secondary)', opacity: 0.7 }}>
+                Choose your preferred method
+              </p>
+
+              <div className="space-y-4 mb-8">
+                <button
+                  onClick={() => { setCreationMethod('ai'); setStep(1); }}
+                  className="card-pop p-6 w-full text-left transition-all hover:scale-[1.02]"
+                  style={{ border: '2px solid var(--gum-500)' }}
+                >
+                  <div className="text-3xl mb-3">🤖</div>
+                  <h3 className="font-display font-bold text-lg mb-2" style={{ color: 'var(--text-primary)' }}>
+                    AI Generated
+                  </h3>
+                  <p className="font-body text-sm" style={{ color: 'var(--text-secondary)', opacity: 0.7 }}>
+                    Paste text or upload a PDF, and we'll automatically generate questions for you
+                  </p>
+                </button>
+
+                <button
+                  onClick={() => { setCreationMethod('manual'); setStep(1); }}
+                  className="card-pop p-6 w-full text-left transition-all hover:scale-[1.02]"
+                  style={{ border: '2px solid transparent' }}
+                >
+                  <div className="text-3xl mb-3">✍️</div>
+                  <h3 className="font-display font-bold text-lg mb-2" style={{ color: 'var(--text-primary)' }}>
+                    Manual
+                  </h3>
+                  <p className="font-body text-sm" style={{ color: 'var(--text-secondary)', opacity: 0.7 }}>
+                    Write your own questions from scratch. Full control over every detail.
+                  </p>
+                </button>
+              </div>
+
+              <button onClick={() => setStep(0)} className="btn-grape w-full">
+                Back
               </button>
             </motion.div>
           )}
@@ -425,8 +490,8 @@ export default function Create() {
 
               {/* Player cap */}
               <div className="card-pop p-6 mb-4">
-                <label className="font-display font-bold text-sm block mb-2" style={{ color: 'var(--text-secondary)' }}>Max Players (1–20)</label>
-                <input type="number" min={1} max={20} value={playerCap} onChange={e => setPlayerCap(Math.min(20, Math.max(1, Number(e.target.value))))} className="input-pop" />
+                <label className="font-display font-bold text-sm block mb-2" style={{ color: 'var(--text-secondary)' }}>Max Players (1–40)</label>
+                <input type="number" min={1} max={40} value={playerCap} onChange={e => setPlayerCap(Math.min(40, Math.max(1, Number(e.target.value))))} className="input-pop" />
               </div>
 
               {/* Theme */}
@@ -459,7 +524,11 @@ export default function Create() {
 
               <div className="flex gap-3">
                 <button onClick={() => setStep(0)} className="btn-grape flex-1">Back</button>
-                <button onClick={handleGenerate} className="btn-gum flex-[2]">Generate Questions</button>
+                {creationMethod === 'ai' ? (
+                  <button onClick={handleGenerate} className="btn-gum flex-[2]">Generate Questions</button>
+                ) : (
+                  <button onClick={() => { addManualQuestion(); setStep(3); }} className="btn-gum flex-[2]">Start Writing Questions</button>
+                )}
               </div>
             </motion.div>
           )}
@@ -491,6 +560,12 @@ export default function Create() {
               <p className="font-body font-semibold mb-8" style={{ color: 'var(--text-secondary)', opacity: 0.7 }}>
                 {questions.length} questions ready. Edit, delete, or reorder.
               </p>
+
+              {creationMethod === 'manual' && (
+                <button onClick={addManualQuestion} className="btn-grape w-full mb-6">
+                  + Add Question
+                </button>
+              )}
 
               <div className="space-y-4 mb-8">
                 {questions.map((q, i) => (

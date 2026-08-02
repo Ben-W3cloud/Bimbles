@@ -10,6 +10,7 @@ import { Leaderboard } from '../components/Leaderboard'
 import { Podium } from '../components/Podium'
 import { EmojiReactions } from '../components/EmojiReactions'
 import { TerritoryMap } from '../components/TerritoryMap'
+import { Spinner } from '../components/Spinner'
 
 const EMOJIS = ['🔥', '😂', '💀', '🎉', '😱', '👏', '💪', '🫧']
 
@@ -97,26 +98,40 @@ export default function Room() {
             autoFocus
           />
 
-          <div className="flex gap-3 mb-4">
+          {/* Toggle Switch for Play/Watch */}
+          <div className="relative flex items-center mb-4" style={{ height: '56px' }}>
+            {/* Background track - longer */}
+            <div className="absolute w-full h-14 rounded-full" style={{ background: 'rgba(114, 46, 209, 0.1)' }} />
+            
+            {/* Sliding purple pill - longer */}
+            <motion.div
+              className="absolute h-14 rounded-full"
+              style={{
+                background: 'linear-gradient(135deg, #722ED1, #8B5CF6)', // Purple gradient
+                boxShadow: '0 4px 12px rgba(114, 46, 209, 0.4)'
+              }}
+              animate={{
+                width: '50%',
+                left: role === 'player' ? '0%' : '50%'
+              }}
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+            />
+            
+            {/* Buttons */}
             <button
               onClick={() => setRole('player')}
-              className="flex-1 py-3 rounded-xl font-body font-bold text-sm transition-all"
-              style={{
-                background: role === 'player' ? 'var(--gum-500)' : 'rgba(114, 46, 209, 0.06)',
-                color: role === 'player' ? 'white' : 'var(--text-primary)',
-              }}
+              className="flex-1 py-3 font-body font-bold text-sm transition-colors relative z-10"
+              style={{ color: role === 'player' ? 'white' : 'var(--text-secondary)' }}
             >
-              Play
+              🎮 Play
             </button>
+            
             <button
               onClick={() => setRole('spectator')}
-              className="flex-1 py-3 rounded-xl font-body font-bold text-sm transition-all"
-              style={{
-                background: role === 'spectator' ? 'var(--grape-500)' : 'rgba(114, 46, 209, 0.06)',
-                color: role === 'spectator' ? 'white' : 'var(--text-primary)',
-              }}
+              className="flex-1 py-3 font-body font-bold text-sm transition-colors relative z-10"
+              style={{ color: role === 'spectator' ? 'white' : 'var(--text-secondary)' }}
             >
-              Watch
+              👁 Watch
             </button>
           </div>
 
@@ -125,7 +140,12 @@ export default function Room() {
           )}
 
           <button onClick={handleJoin} disabled={isConnecting} className="btn-gum w-full">
-            {isConnecting ? 'Connecting...' : 'Join'}
+            {isConnecting ? (
+              <div className="flex items-center justify-center gap-2">
+                <Spinner size="sm" color="white" />
+                <span>Connecting...</span>
+              </div>
+            ) : 'Join'}
           </button>
         </motion.div>
       </motion.div>
